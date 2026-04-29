@@ -243,7 +243,7 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 .dot-current { background: var(--kerala-dark); }
 
 .question-area {
-  display: grid; grid-template-columns: 1fr 220px; gap: 20px;
+  display: grid; grid-template-columns: 1fr 240px; gap: 20px;
 }
 .question-card {
   background: white; border-radius: var(--radius);
@@ -292,11 +292,11 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 /* Question palette */
 .question-palette { background: white; border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); position: sticky; top: 80px; }
 .palette-title { font-size: 13px; font-weight: 700; color: var(--kerala-dark); margin-bottom: 12px; }
-.palette-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-bottom: 14px; }
+.palette-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 8px; }
 .palette-num {
-  width: 32px; height: 32px; border-radius: 6px;
+  width: 100%; height: 36px; border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 600; cursor: pointer;
+  font-size: 12px; font-weight: 700; cursor: pointer;
   border: 1.5px solid var(--border); background: var(--bg-body);
   transition: all .15s; color: var(--text-primary);
 }
@@ -306,6 +306,58 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 .palette-legend { font-size: 11px; color: #666; }
 .palette-legend div { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
 .pl-dot { width: 12px; height: 12px; border-radius: 3px; }
+.palette-page-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; gap: 4px;
+}
+.palette-page-btn {
+  background: var(--bg-body); border: 1.5px solid var(--border);
+  border-radius: 6px; cursor: pointer; padding: 3px 8px;
+  font-size: 11px; font-weight: 700; color: var(--kerala-dark);
+  transition: all .15s; line-height: 1.6;
+}
+.palette-page-btn:hover:not(:disabled) { background: var(--kerala-dark); color: white; border-color: var(--kerala-dark); }
+.palette-page-btn:disabled { opacity: .35; cursor: default; }
+.palette-page-label { font-size: 11px; font-weight: 700; color: #888; }
+
+/* ─── 5-PER-PAGE QUESTION LAYOUT ──────────── */
+.question-page-list { display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px; }
+.question-block {
+  background: white; border-radius: var(--radius);
+  padding: 24px 28px; box-shadow: var(--shadow);
+  border: 1px solid var(--border); border-left: 4px solid var(--kerala-dark);
+}
+.question-block.answered { border-left-color: var(--kerala-green); }
+.question-block-num {
+  font-size: 11px; font-weight: 700; color: var(--kerala-gold);
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.question-block-num .answered-badge {
+  background: var(--kerala-green); color: white;
+  font-size: 10px; padding: 2px 7px; border-radius: 10px; letter-spacing: .5px;
+}
+.question-block-text {
+  font-size: 15px; font-weight: 600; color: var(--kerala-dark);
+  line-height: 1.6; margin-bottom: 6px;
+}
+.question-block-ml {
+  font-size: 13px; color: #555; line-height: 1.8; margin-bottom: 16px;
+  font-family: "Noto Sans Malayalam", sans-serif;
+}
+.options-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+@media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } }
+.question-page-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  background: white; border-radius: var(--radius);
+  padding: 16px 24px; box-shadow: var(--shadow); border: 1px solid var(--border);
+  margin-top: 8px; flex-wrap: wrap; gap: 10px;
+}
+.page-nav-label {
+  font-size: 14px; font-weight: 700; color: var(--kerala-dark);
+}
 
 /* ─── RESULT ─────────────────────────────── */
 .result-card {
@@ -874,39 +926,22 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
 
     <div class="exam-progress">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:13px;font-weight:700;" id="progressText">Question 1 of 100</span>
+        <span style="font-size:13px;font-weight:700;" id="progressText">Page 1 of 20</span>
         <span style="font-size:12px;color:#888;" id="progressPct">0% Complete</span>
       </div>
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
       <div class="progress-stats">
         <div class="progress-stat"><div class="dot dot-answered"></div><span id="cntAnswered">0 Answered</span></div>
-        <div class="progress-stat"><div class="dot dot-skipped" style="background:#E0E4F0"></div><span id="cntSkipped">0 Not Visited</span></div>
+        <div class="progress-stat"><div class="dot dot-skipped" style="background:#E0E4F0"></div><span id="cntSkipped">0 Remaining</span></div>
       </div>
     </div>
 
-    <div class="question-area">
-      <div class="question-card">
-        <div class="question-number" id="qNum">QUESTION 1 OF 100</div>
-        <div class="question-text" id="qText"></div>
-        <div class="question-text-ml" id="qTextML" style="display:none"></div>
-        <div class="options" id="optionList"></div>
-        <div class="question-nav-btns">
-          <button class="btn btn-outline" onclick="prevQuestion()"><i class="fas fa-arrow-left"></i> Previous</button>
-          <button class="btn btn-primary" onclick="nextQuestion()">Next <i class="fas fa-arrow-right"></i></button>
-          <button class="btn btn-gold" onclick="skipQuestion()">Skip <i class="fas fa-forward"></i></button>
-        </div>
-      </div>
-      <div>
-        <div class="question-palette">
-          <div class="palette-title">Question Navigator</div>
-          <div class="palette-grid" id="paletteGrid"></div>
-          <div class="palette-legend">
-            <div><div class="pl-dot" style="background:var(--kerala-green)"></div> Answered</div>
-            <div><div class="pl-dot" style="background:var(--kerala-dark)"></div> Current</div>
-            <div><div class="pl-dot" style="background:var(--bg-body);border:1.5px solid var(--border)"></div> Not Visited</div>
-          </div>
-        </div>
-      </div>
+    <div id="questionPageList"></div>
+
+    <div class="question-page-nav" id="questionPageNav">
+      <button class="btn btn-outline" id="btnPrevPage" onclick="prevPage()"><i class="fas fa-arrow-left"></i> Previous</button>
+      <span class="page-nav-label" id="pageNavLabel">Page 1 of 20</span>
+      <button class="btn btn-primary" id="btnNextPage" onclick="nextPage()">Next <i class="fas fa-arrow-right"></i></button>
     </div>
   </div>
 
@@ -991,6 +1026,11 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
       <div>
         <div class="question-palette">
           <div class="palette-title">Question Navigator</div>
+          <div class="palette-page-nav">
+            <button class="palette-page-btn" id="mePalPagePrev" onclick="mePalChangePage(-1)">&#8249; Prev</button>
+            <span class="palette-page-label" id="mePalPageLabel">1–5</span>
+            <button class="palette-page-btn" id="mePalPageNext" onclick="mePalChangePage(1)">Next &#8250;</button>
+          </div>
           <div class="palette-grid" id="mePaletteGrid"></div>
           <div class="palette-legend">
             <div><div class="pl-dot" style="background:var(--kerala-green)"></div> Answered</div>
@@ -2216,100 +2256,130 @@ async function loadExam(exam, freePreviewOnly) {
   document.getElementById('examTitleDisplay').textContent = exam.title + previewNote;
   document.getElementById('examMetaDisplay').textContent = `${currentExam.questions.length} Questions · ${exam.duration} min · 1 mark / -0.33`;
 
-  buildPalette(currentExam.questions.length);
+  currentPage = 0;
   startTimer(exam.duration * 60);
-  renderQuestion(0);
+  renderPage(0);
 }
+
+// ─── 5-QUESTIONS-PER-PAGE EXAM ENGINE ────────
+const QS_PER_PAGE = 5;
+let currentPage = 0;
 
 function buildPalette(n) {
-  const grid = document.getElementById('paletteGrid');
-  grid.innerHTML = Array.from({length: n}, (_, i) =>
-    `<div class="palette-num" id="pn${i}" onclick="gotoQuestion(${i})">${i+1}</div>`
-  ).join('');
+  // No separate palette needed – questions shown inline
+  currentPage = 0;
 }
 
-function renderQuestion(idx) {
-  const q = currentExam.questions[idx];
-  if (!q) return;
-  document.getElementById('qNum').textContent = `QUESTION ${idx+1} OF ${currentExam.questions.length}`;
+// Keep these stubs so any legacy calls don't error
+function palChangePage(dir) {}
+function renderPalettePage() {}
+function updatePalette() {}
 
-  const showML = currentLang === 'ml' && q.question_ml;
-  // Show question text: if ML mode and ML text exists, show ML; else EN
-  document.getElementById('qText').textContent = showML ? q.question_ml : (q.question_en || q.question || '');
-  const mlEl = document.getElementById('qTextML');
-  if (showML && q.question_en) {
-    // Show EN as sub-text when ML is primary
-    mlEl.textContent = q.question_en;
-    mlEl.style.display = 'block';
-  } else if (!showML && q.question_ml) {
-    // Show ML as sub-text when EN is primary
-    mlEl.textContent = q.question_ml;
-    mlEl.style.display = 'block';
-  } else {
-    mlEl.style.display = 'none';
-  }
-
+function renderPage(page) {
+  currentPage = page;
+  const qs = currentExam.questions;
+  const total = qs.length;
+  const totalPages = Math.ceil(total / QS_PER_PAGE);
+  const start = page * QS_PER_PAGE;
+  const end = Math.min(start + QS_PER_PAGE, total);
+  const showML = currentLang === 'ml';
   const opts = ['A','B','C','D'];
   const optKeys = ['option_a','option_b','option_c','option_d'];
-  // Use ML options if available and ML mode; else fall back to EN options
   const mlOptKeys = ['option_a_ml','option_b_ml','option_c_ml','option_d_ml'];
-  const selected = userAnswers[idx];
 
-  document.getElementById('optionList').innerHTML = opts.map((letter, i) => {
-    const hasMLOpt = q[mlOptKeys[i]];
-    const text = (showML && hasMLOpt) ? q[mlOptKeys[i]] : (q[optKeys[i]] || '');
-    const isSelected = selected === letter;
-    return `<button class="option-btn ${isSelected?'selected':''}" onclick="selectOption(${idx},'${letter}')">
-      <div class="option-letter">${letter}</div>
-      <div class="option-text">${text}</div>
-    </button>`;
+  const html = Array.from({length: end - start}, (_, i) => {
+    const idx = start + i;
+    const q = qs[idx];
+    const selected = userAnswers[idx];
+    const isAnswered = !!selected;
+    const qText = (showML && q.question_ml) ? q.question_ml : (q.question_en || q.question || '');
+    const qSub  = (!showML && q.question_ml) ? q.question_ml : (showML && q.question_en ? q.question_en : '');
+
+    const optionsHTML = opts.map((letter, oi) => {
+      const hasMLOpt = q[mlOptKeys[oi]];
+      const text = (showML && hasMLOpt) ? q[mlOptKeys[oi]] : (q[optKeys[oi]] || '');
+      const sel = selected === letter ? 'selected' : '';
+      return `<button class="option-btn ${sel}" onclick="selectOption(${idx},'${letter}')">
+        <div class="option-letter">${letter}</div>
+        <div class="option-text">${text}</div>
+      </button>`;
+    }).join('');
+
+    return `<div class="question-block ${isAnswered?'answered':''}" id="qblock-${idx}">
+      <div class="question-block-num">
+        Question ${idx+1} of ${total}
+        ${isAnswered ? '<span class="answered-badge">✓ Answered</span>' : ''}
+      </div>
+      <div class="question-block-text">${qText}</div>
+      ${qSub ? `<div class="question-block-ml">${qSub}</div>` : ''}
+      <div class="options-grid">${optionsHTML}</div>
+    </div>`;
   }).join('');
 
+  document.getElementById('questionPageList').innerHTML = `<div class="question-page-list">${html}</div>`;
+
+  // Update nav
+  const prevBtn = document.getElementById('btnPrevPage');
+  const nextBtn = document.getElementById('btnNextPage');
+  if (prevBtn) prevBtn.disabled = page <= 0;
+  if (nextBtn) {
+    const isLast = page >= totalPages - 1;
+    nextBtn.textContent = isLast ? '' : '';
+    nextBtn.innerHTML = isLast
+      ? '<i class="fas fa-check-circle"></i> Submit Exam'
+      : 'Next <i class="fas fa-arrow-right"></i>';
+    nextBtn.className = isLast ? 'btn btn-gold' : 'btn btn-primary';
+    nextBtn.onclick = isLast ? confirmSubmit : nextPage;
+  }
+  const label = document.getElementById('pageNavLabel');
+  if (label) label.textContent = `Page ${page+1} of ${totalPages}  (Q ${start+1}–${end})`;
+
   updateProgress();
-  updatePalette(idx);
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 function selectOption(idx, letter) {
   userAnswers[idx] = letter;
-  renderQuestion(idx);
+  // Refresh only the changed question block's styling
+  const block = document.getElementById('qblock-' + idx);
+  if (block) {
+    block.classList.add('answered');
+    const numEl = block.querySelector('.question-block-num');
+    if (numEl && !numEl.querySelector('.answered-badge')) {
+      numEl.innerHTML += '<span class="answered-badge">✓ Answered</span>';
+    }
+    block.querySelectorAll('.option-btn').forEach((btn, i) => {
+      btn.className = 'option-btn' + (['A','B','C','D'][i] === letter ? ' selected' : '');
+    });
+  }
+  updateProgress();
 }
 
-function nextQuestion() {
-  if (currentQIdx < currentExam.questions.length - 1) {
-    currentQIdx++;
-    renderQuestion(currentQIdx);
-  }
+function nextPage() {
+  const totalPages = Math.ceil(currentExam.questions.length / QS_PER_PAGE);
+  if (currentPage < totalPages - 1) renderPage(currentPage + 1);
 }
-function prevQuestion() {
-  if (currentQIdx > 0) { currentQIdx--; renderQuestion(currentQIdx); }
+function prevPage() {
+  if (currentPage > 0) renderPage(currentPage - 1);
 }
-function skipQuestion() {
-  nextQuestion();
-}
-function gotoQuestion(idx) {
-  currentQIdx = idx;
-  renderQuestion(idx);
-}
+
+// Legacy stubs kept for any calls from mass exam or elsewhere
+function renderQuestion(idx) { renderPage(Math.floor(idx / QS_PER_PAGE)); }
+function nextQuestion() { nextPage(); }
+function prevQuestion() { prevPage(); }
+function skipQuestion() { nextPage(); }
+function gotoQuestion(idx) { renderPage(Math.floor(idx / QS_PER_PAGE)); }
 
 function updateProgress() {
   const total = currentExam.questions.length;
   const answered = Object.keys(userAnswers).length;
+  const totalPages = Math.ceil(total / QS_PER_PAGE);
   const pct = Math.round(answered / total * 100);
-  document.getElementById('progressText').textContent = `Question ${currentQIdx+1} of ${total}`;
-  document.getElementById('progressPct').textContent = `${pct}% Complete`;
+  document.getElementById('progressText').textContent = `Page ${currentPage+1} of ${totalPages}`;
+  document.getElementById('progressPct').textContent = `${pct}% Complete (${answered}/${total} answered)`;
   document.getElementById('progressFill').style.width = pct + '%';
   document.getElementById('cntAnswered').textContent = `${answered} Answered`;
   document.getElementById('cntSkipped').textContent = `${total - answered} Remaining`;
-}
-
-function updatePalette(current) {
-  currentExam.questions.forEach((_, i) => {
-    const el = document.getElementById('pn' + i);
-    if (!el) return;
-    el.className = 'palette-num';
-    if (i === current) el.classList.add('current');
-    else if (userAnswers[i]) el.classList.add('answered');
-  });
 }
 
 // Timer
@@ -2439,13 +2509,12 @@ function backToExamList() {
 
 function retakeExam() {
   const exam = currentExam;
-  userAnswers = {}; currentQIdx = 0;
+  userAnswers = {}; currentQIdx = 0; currentPage = 0;
   document.getElementById('examList').style.display = 'none';
   document.getElementById('examTaking').style.display = 'block';
   document.getElementById('examResult').style.display = 'none';
-  buildPalette(exam.questions.length);
   startTimer(exam.duration * 60);
-  renderQuestion(0);
+  renderPage(0);
 }
 
 // ─── ADMIN ────────────────────────────────────
@@ -3409,13 +3478,13 @@ async function enterMassExam(me) {
   currentMassExam = { ...me, questions };
   meAnswers = {};
   meQIdx = 0;
+  mePalPage = 0;
 
   document.getElementById('meTakingTitle').textContent = me.title;
   document.getElementById('meTakingKde').textContent = me.kdeNo + ' · ' + questions.length + ' Questions';
 
-  // Build palette
-  const grid = document.getElementById('mePaletteGrid');
-  grid.innerHTML = questions.map((_,i) => `<div class="palette-num" id="mepn${i}" onclick="meGoto(${i})">${i+1}</div>`).join('');
+  // Build paginated palette
+  renderPalettePage(questions.length, 0, 'mePaletteGrid', 'mePalPagePrev', 'mePalPageNext', 'mePalPageLabel', true);
 
   showMeView('taking');
   meRenderQuestion(0);
@@ -3437,6 +3506,16 @@ async function enterMassExam(me) {
   meTimerInterval = setInterval(updateMeTimer, 1000);
 }
 
+let mePalPage = 0;
+
+function mePalChangePage(dir) {
+  const n = currentMassExam ? currentMassExam.questions.length : 0;
+  const maxPage = Math.ceil(n / PAL_PAGE_SIZE) - 1;
+  mePalPage = Math.max(0, Math.min(maxPage, mePalPage + dir));
+  renderPalettePage(n, mePalPage, 'mePaletteGrid', 'mePalPagePrev', 'mePalPageNext', 'mePalPageLabel', true);
+  meUpdatePalette(meQIdx);
+}
+
 function meRenderQuestion(idx) {
   const qs = currentMassExam.questions;
   const q = qs[idx];
@@ -3455,6 +3534,13 @@ function meRenderQuestion(idx) {
       <div class="option-text">${q[key]||''}</div>
     </button>`;
   }).join('');
+
+  // Auto-flip palette page to show current question
+  const targetPage = Math.floor(idx / PAL_PAGE_SIZE);
+  if (targetPage !== mePalPage) {
+    mePalPage = targetPage;
+    renderPalettePage(qs.length, mePalPage, 'mePaletteGrid', 'mePalPagePrev', 'mePalPageNext', 'mePalPageLabel', true);
+  }
 
   meUpdateProgress(idx);
   meUpdatePalette(idx);
@@ -3477,13 +3563,15 @@ function meUpdateProgress(current) {
 }
 
 function meUpdatePalette(current) {
-  currentMassExam.questions.forEach((_,i) => {
+  const start = mePalPage * PAL_PAGE_SIZE;
+  const end = Math.min(start + PAL_PAGE_SIZE, currentMassExam.questions.length);
+  for (let i = start; i < end; i++) {
     const el = document.getElementById('mepn' + i);
-    if (!el) return;
+    if (!el) continue;
     el.className = 'palette-num';
     if (i === current) el.classList.add('current');
     else if (meAnswers[i]) el.classList.add('answered');
-  });
+  }
 }
 
 function meConfirmSubmit() {
