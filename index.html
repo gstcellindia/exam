@@ -252,7 +252,7 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 .question-number { font-size: 12px; font-weight: 700; color: var(--kerala-gold); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
 .question-text { font-size: 16px; font-weight: 600; color: var(--kerala-dark); line-height: 1.6; margin-bottom: 6px; }
 .question-text-ml { font-size: 14px; color: #555; line-height: 1.8; margin-bottom: 20px; font-family: 'Noto Sans Malayalam', sans-serif; }
-.options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
 .option-btn {
   display: flex; align-items: flex-start; gap: 14px;
   padding: 14px 18px; border-radius: 10px;
@@ -292,7 +292,7 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 /* Question palette */
 .question-palette { background: white; border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); position: sticky; top: 80px; }
 .palette-title { font-size: 13px; font-weight: 700; color: var(--kerala-dark); margin-bottom: 12px; }
-.palette-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 14px; }
+.palette-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-bottom: 14px; }
 .palette-num {
   width: 32px; height: 32px; border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
@@ -443,6 +443,8 @@ tr:hover td { background: var(--bg-body); }
   .result-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .admin-grid { grid-template-columns: 1fr; }
   .exam-header { flex-wrap: wrap; }
+  .options { grid-template-columns: 1fr; }
+  .palette-grid { grid-template-columns: repeat(5, 1fr); }
 }
 
 /* Select exam modal */
@@ -1380,11 +1382,11 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
     <div id="formLogin">
       <div class="form-group">
         <label class="form-label">Email Address</label>
-        <input class="form-input" type="email" id="loginEmail" placeholder="your@email.com">
+        <input class="form-input" type="email" id="loginEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter') doLogin()">
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input class="form-input" type="password" id="loginPassword" placeholder="••••••••">
+        <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin()">
       </div>
       <button class="btn btn-primary btn-block" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Sign In</button>
       <div class="divider">or</div>
@@ -2159,7 +2161,11 @@ function startFreePreview() {
 
 // ─── EXAM FLOW ────────────────────────────────
 function openExamStart(examId, freePreviewOnly) {
-  if (!currentUser && auth) { openAuth(); return; }
+  if (!currentUser && auth) {
+    showToast('🔒 Please log in to access exam questions.');
+    openAuth();
+    return;
+  }
   showPage('exams');
   const papers = examPapers.length ? examPapers : demoExams;
   const exam = papers.find(e => e.id === examId);
