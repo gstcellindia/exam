@@ -55,23 +55,48 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 }
 .nav-tab:hover { background: rgba(255,255,255,.1); color: white; }
 .nav-tab.active { background: var(--kerala-gold); color: var(--kerala-dark); }
-.nav-user {
-  display: flex; align-items: center; gap: 10px;
-  margin-left: 16px; font-size: 13px;
+.nav-user { display: flex; align-items: center; margin-left: 16px; position: relative; }
+.nav-avatar-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: none; cursor: pointer; padding: 4px 8px 4px 4px;
+  border-radius: 24px; transition: background .2s;
 }
+.nav-avatar-btn:hover { background: rgba(255,255,255,.12); }
 .nav-avatar {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--kerala-gold); color: var(--kerala-dark);
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 14px; cursor: pointer;
+  font-weight: 700; font-size: 14px; flex-shrink: 0;
 }
-.nav-user-name { color: rgba(255,255,255,.85); font-weight: 500; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.btn-logout {
-  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
-  color: white; padding: 5px 12px; border-radius: 6px;
-  cursor: pointer; font-size: 12px; font-weight: 600; transition: all .2s;
+.nav-avatar-caret { color: rgba(255,255,255,.7); font-size: 11px; }
+
+/* dropdown */
+.user-dropdown {
+  position: absolute; top: calc(100% + 10px); right: 0;
+  background: white; border-radius: 14px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.22);
+  min-width: 220px; z-index: 300; overflow: hidden;
+  opacity: 0; pointer-events: none;
+  transform: translateY(-6px); transition: opacity .18s, transform .18s;
 }
-.btn-logout:hover { background: var(--kerala-red); border-color: var(--kerala-red); }
+.user-dropdown.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+.user-dropdown-header {
+  background: var(--kerala-dark); color: white;
+  padding: 14px 18px 12px;
+}
+.user-dropdown-header .ud-name { font-weight: 700; font-size: 15px; line-height: 1.3; }
+.user-dropdown-header .ud-email { font-size: 12px; color: rgba(255,255,255,.6); margin-top: 2px; word-break: break-all; }
+.ud-divider { height: 1px; background: #F0F0F0; margin: 4px 0; }
+.ud-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 18px; font-size: 14px; font-weight: 500;
+  color: var(--text-primary); cursor: pointer; transition: background .15s;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.ud-item:hover { background: #F5F7FF; }
+.ud-item.danger { color: #C0392B; }
+.ud-item.danger:hover { background: #FFF0EE; }
+.ud-item-icon { font-size: 16px; width: 22px; text-align: center; }
 .lang-toggle {
   display: flex; align-items: center; gap: 6px;
   background: rgba(255,255,255,.1); border-radius: 20px;
@@ -83,7 +108,7 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 .lang-toggle .active-lang { color: var(--kerala-gold); }
 
 /* ─── PAGES ─────────────────────────────── */
-.page { display: none; padding: 28px 24px; max-width: 1200px; margin: 0 auto; }
+.page { display: none; padding: 28px 5%; width: 100%; max-width: 1600px; margin: 0 auto; }
 .page.active { display: block; }
 
 /* ─── HOME PAGE ─────────────────────────── */
@@ -112,8 +137,60 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 
 .section-title { font-size: 20px; font-weight: 700; color: var(--kerala-dark); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
 .section-title::after { content: ''; flex: 1; height: 2px; background: linear-gradient(90deg, var(--kerala-gold), transparent); margin-left: 8px; }
+.section-title .cat-icon { font-size: 20px; }
 
-.exam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.category-section { margin-bottom: 40px; }
+.category-section:last-child { margin-bottom: 0; }
+
+/* ─── CATEGORY MANAGER ─────────────────────── */
+.cat-manager-grid {
+  display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start;
+}
+.cat-list-panel {
+  background: var(--bg-body); border-radius: var(--radius); border: 1.5px solid var(--border);
+  overflow: hidden;
+}
+.cat-list-header {
+  background: var(--kerala-dark); color: white; padding: 12px 16px;
+  font-size: 13px; font-weight: 700; letter-spacing: .5px;
+}
+.cat-list-item {
+  padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600;
+  border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
+  transition: background .15s; color: var(--text-primary);
+}
+.cat-list-item:hover { background: #EEF3FF; }
+.cat-list-item.active { background: #EEF3FF; color: var(--kerala-dark); border-left: 3px solid var(--kerala-gold); }
+.cat-list-item .cat-num { font-size: 11px; color: #999; font-weight: 400; min-width: 22px; }
+.subcat-panel { background: white; border-radius: var(--radius); border: 1.5px solid var(--border); padding: 20px; }
+.subcat-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #EEF3FF; color: var(--kerala-dark); border-radius: 20px;
+  padding: 5px 12px; font-size: 12px; font-weight: 600; margin: 4px;
+  border: 1.5px solid var(--border);
+}
+.subcat-tag button {
+  background: none; border: none; color: #aaa; cursor: pointer; font-size: 13px;
+  padding: 0; line-height: 1; transition: color .15s;
+}
+.subcat-tag button:hover { color: var(--kerala-red); }
+.subcat-add-row { display: flex; gap: 8px; margin-top: 14px; }
+.cat-edit-btn {
+  background: none; border: none; cursor: pointer; padding: 3px 6px;
+  border-radius: 4px; font-size: 12px; transition: all .15s;
+}
+.cat-edit-btn.edit { color: var(--kerala-mid); }
+.cat-edit-btn.edit:hover { background: #EEF3FF; color: var(--kerala-dark); }
+.cat-edit-btn.del { color: #ccc; }
+.cat-edit-btn.del:hover { background: #FFF0EE; color: var(--kerala-red); }
+.add-main-cat-row { display:flex; gap:8px; padding:10px 16px; border-top:2px dashed var(--border); margin-top:4px; }
+.add-main-cat-row input { flex:1; padding:7px 10px; border-radius:6px; border:1.5px solid var(--border); font-size:12px; font-family:inherit; }
+.add-main-cat-row input:focus { outline:none; border-color:var(--kerala-dark); }
+.subcat-add-row input { flex: 1; }
+.sub-select-wrap { display: flex; flex-direction: column; gap: 6px; }
+.sub-select-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+
+.exam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
 .exam-card {
   background: var(--bg-card); border-radius: var(--radius);
   padding: 24px; border: 1.5px solid var(--border);
@@ -383,6 +460,291 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
 .review-item.correct { border-color: var(--kerala-green); background: #F0FAF4; }
 .review-item.wrong { border-color: var(--kerala-red); background: #FFF5F5; }
 .review-item.skipped { border-color: #E67E22; background: #FFF9F0; }
+
+/* Edit table */
+.edit-cell {
+  width: 100%; padding: 6px 8px; border: 1.5px solid var(--border);
+  border-radius: 6px; font-size: 12px; font-family: inherit;
+  background: var(--bg-body); color: var(--text-primary); resize: vertical;
+  transition: border .2s;
+}
+.edit-cell:focus { outline: none; border-color: var(--kerala-dark); background: white; }
+.edit-ml { color: #555; }
+
+/* Lock toggle */
+.lock-btn {
+  width: 32px; height: 32px; border-radius: 6px; border: 1.5px solid var(--border);
+  background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; transition: all .2s;
+}
+.lock-btn.locked { background: #FFF3E0; border-color: #FFB74D; color: #E65100; }
+.lock-btn.unlocked { background: #E8F5E9; border-color: #81C784; color: var(--kerala-green); }
+.preview-row-locked { background: #FFF8F0 !important; opacity: .85; }
+.preview-row-locked td { color: #999 !important; }
+
+/* Exam card lock badge */
+.badge-lock { background: #FFF3E0; color: #E65100; }
+.badge-free { background: #E8F5E9; color: var(--kerala-green); }
+.exam-locked-overlay {
+  position: absolute; inset: 0; border-radius: var(--radius);
+  background: rgba(26,39,68,.6); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+  color: white; font-size: 13px; font-weight: 700;
+  opacity: 0; transition: opacity .25s; cursor: pointer;
+}
+.exam-card:hover .exam-locked-overlay { opacity: 1; }
+.locked-icon { font-size: 28px; }
+
+/* Paywall modal */
+.paywall-card { background: white; border-radius: 20px; padding: 36px; max-width: 420px; width: 100%; box-shadow: var(--shadow-lg); text-align: center; }
+.paywall-card .price-badge { font-size: 36px; font-weight: 800; color: var(--kerala-dark); margin: 12px 0; }
+.paywall-card .price-badge span { font-size: 18px; color: #888; font-weight: 400; }
+
+/* Question locked row in exam */
+.question-locked {
+  background: linear-gradient(135deg, #FFF8F0, #FFF3E0);
+  border: 2px dashed #FFB74D; border-radius: 10px;
+  padding: 20px; text-align: center; color: #E65100;
+  font-size: 14px; font-weight: 600; margin-bottom: 8px;
+}
+
+/* ─── HOME LAYOUT WITH SIDEBAR ─────────────── */
+.home-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.filter-sidebar {
+  background: white;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.filter-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--kerala-dark);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  position: sticky;
+  top: 0;
+}
+.filter-clear-btn {
+  margin-left: auto;
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.filter-clear-btn:hover { background: var(--kerala-red); border-color: var(--kerala-red); }
+.filter-main-cat {
+  border-bottom: 1px solid var(--border);
+}
+.filter-main-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s;
+}
+.filter-main-cat-header:hover { background: var(--bg-body); }
+.filter-main-cat-icon { font-size: 16px; flex-shrink: 0; }
+.filter-main-cat-name { flex: 1; font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.filter-main-cat-count {
+  font-size: 10px; font-weight: 700;
+  background: var(--kerala-dark); color: white;
+  border-radius: 20px; padding: 2px 7px;
+  flex-shrink: 0;
+}
+.filter-main-cat-arrow {
+  font-size: 11px; color: #aaa; transition: transform .2s; flex-shrink: 0;
+}
+.filter-main-cat.open .filter-main-cat-arrow { transform: rotate(180deg); }
+.filter-subcats {
+  display: none;
+  padding: 4px 0 8px 0;
+  background: var(--bg-body);
+  border-top: 1px solid var(--border);
+}
+.filter-main-cat.open .filter-subcats { display: block; }
+.filter-subcat-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px 7px 36px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #555;
+  transition: background .1s;
+}
+.filter-subcat-item:hover { background: #EEF3FF; color: var(--kerala-dark); }
+.filter-subcat-item input[type="checkbox"] {
+  width: 15px; height: 15px;
+  accent-color: var(--kerala-dark);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.filter-subcat-item label {
+  cursor: pointer;
+  flex: 1;
+  font-weight: 500;
+}
+.filter-subcat-count {
+  font-size: 10px; color: #aaa; font-weight: 600;
+}
+.filter-subcat-item.checked label { color: var(--kerala-dark); font-weight: 700; }
+.filter-subcat-item.checked { background: #EEF3FF; }
+/* If main cat has no subcats, show papers directly under it */
+.filter-main-cat.all-subcat .filter-subcat-item { padding-left: 14px; }
+.home-content { min-width: 0; }
+.filter-summary {
+  background: #EEF3FF;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  color: var(--kerala-dark);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 768px) {
+  .home-layout { grid-template-columns: 1fr; }
+  .filter-sidebar { position: static; max-height: none; }
+}
+
+/* ─── CATEGORY BUNDLE PRICE ─────────────────── */
+.cat-price-section {
+  background: linear-gradient(135deg, #FFF8E7, #FFFDF0);
+  border: 1.5px solid #F0D680;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 16px;
+}
+.cat-price-section .price-label {
+  font-size: 11px; font-weight: 700; color: #8A6A00;
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.cat-price-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.cat-price-display {
+  font-size: 26px; font-weight: 800; color: var(--kerala-dark);
+  font-variant-numeric: tabular-nums;
+}
+.cat-price-breakdown {
+  font-size: 11px; color: #888; line-height: 1.6;
+}
+.bundle-paywall-card {
+  background: white; border-radius: 20px; padding: 36px 28px;
+  max-width: 420px; width: 100%; box-shadow: 0 16px 60px rgba(0,0,0,.3);
+  text-align: center; position: relative;
+}
+.bundle-unlock-info {
+  background: linear-gradient(135deg, #E8F5EE, #F0FFF5);
+  border: 1.5px solid #81C784; border-radius: 10px;
+  padding: 14px; margin: 16px 0; font-size: 13px; color: #1E7A4E; text-align: left;
+}
+.bundle-unlock-info div { margin-bottom: 6px; }
+.bundle-unlock-info div:last-child { margin-bottom: 0; }
+
+/* ─── MASS EXAM ──────────────────────────────── */
+.kde-badge {
+  display: inline-block; background: linear-gradient(135deg,var(--kerala-dark),var(--kerala-mid));
+  color: var(--kerala-gold); font-weight: 800; font-size: 13px;
+  padding: 3px 10px; border-radius: 6px; letter-spacing: 1px; font-family: monospace;
+}
+.mass-exam-card {
+  background: var(--bg-card); border-radius: var(--radius); padding: 20px 22px;
+  border: 1.5px solid var(--border); box-shadow: var(--shadow);
+  position: relative; overflow: hidden; transition: all .2s;
+}
+.mass-exam-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:4px;
+  background: linear-gradient(90deg,#8B1A8B,#C8A96E);
+}
+.mass-exam-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-lg); }
+.mass-exam-status {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;
+}
+.status-upcoming { background:#EEF3FF; color:var(--kerala-dark); }
+.status-live { background:#E8F5EE; color:var(--kerala-green); animation: livepulse 2s infinite; }
+.status-ended { background:#F5F5F5; color:#999; }
+@keyframes livepulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+.mass-exam-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; }
+.countdown-badge {
+  font-size:13px; font-weight:700; color:var(--kerala-dark);
+  background:#FFF8E7; border:1.5px solid #F0D680; border-radius:8px;
+  padding:5px 12px; display:inline-flex; align-items:center; gap:6px;
+}
+.leaderboard-table { width:100%; border-collapse:collapse; font-size:13px; }
+.leaderboard-table th { background:var(--kerala-dark); color:white; padding:10px 12px; text-align:left; font-size:12px; }
+.leaderboard-table td { padding:10px 12px; border-bottom:1px solid var(--border); }
+.leaderboard-table tr:hover td { background:#F5F7FF; }
+.leaderboard-table tr.my-row td { background:#FFF8E7; font-weight:700; }
+.rank-badge {
+  width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center;
+  justify-content:center; font-weight:800; font-size:12px;
+}
+.rank-1 { background:linear-gradient(135deg,#FFD700,#FFA500); color:white; }
+.rank-2 { background:linear-gradient(135deg,#C0C0C0,#A0A0A0); color:white; }
+.rank-3 { background:linear-gradient(135deg,#CD7F32,#A0522D); color:white; }
+.rank-other { background:var(--bg-body); color:#888; border:1.5px solid var(--border); }
+.join-exam-modal { background:white; border-radius:20px; padding:36px 28px; max-width:440px; width:100%; box-shadow:0 16px 60px rgba(0,0,0,.3); text-align:center; position:relative; }
+.kde-number-display {
+  font-family:monospace; font-size:32px; font-weight:800; color:var(--kerala-dark);
+  background:var(--bg-body); border-radius:10px; padding:10px 20px; letter-spacing:4px;
+  display:inline-block; margin:12px 0; border:2px solid var(--border);
+}
+.mass-exam-taking-banner {
+  background:linear-gradient(135deg,#4A0080,#8B1A8B);
+  color:white; border-radius:10px; padding:10px 18px;
+  display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;
+}
+.admin-mass-form { display:grid; gap:14px; }
+.admin-mass-form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.admin-mass-form-row.three { grid-template-columns:1fr 1fr 1fr; }
+.admin-mass-form-row.full { grid-template-columns:1fr; }
+
+/* ─── FAVORITE BUTTON ────────────────────────── */
+.fav-btn {
+  position: absolute; top: 12px; right: 12px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: white; border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px; transition: all .2s;
+  z-index: 2; box-shadow: 0 1px 6px rgba(0,0,0,.1);
+  line-height: 1;
+}
+.fav-btn:hover { transform: scale(1.15); border-color: #E74C3C; }
+.fav-btn.active { background: #FFF0EE; border-color: #E74C3C; }
+.fav-btn .fav-icon { pointer-events: none; }
+.my-exams-empty {
+  text-align:center; padding:60px 20px; color:#aaa;
+}
+.my-exams-empty .empty-icon { font-size:48px; margin-bottom:12px; }
+.my-exams-empty p { font-size:15px; font-weight:600; margin-bottom:6px; color:#888; }
+.my-exams-empty span { font-size:13px; }
 </style>
 </head>
 <body>
@@ -398,7 +760,8 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
   </div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('home')" id="tab-home"><i class="fas fa-home"></i> <span>Home</span></button>
-    <button class="nav-tab" onclick="showPage('exams')" id="tab-exams"><i class="fas fa-file-alt"></i> <span>Exams</span></button>
+    <button class="nav-tab" onclick="showPage('exams')" id="tab-exams"><i class="fas fa-file-alt"></i> <span>My Exams</span></button>
+    <button class="nav-tab" onclick="showPage('massexam')" id="tab-massexam"><i class="fas fa-users-cog"></i> <span>Mass Exam</span></button>
     <button class="nav-tab" id="tab-admin" style="display:none" onclick="showPage('admin')"><i class="fas fa-cog"></i> <span>Admin</span></button>
   </div>
   <div style="flex:1"></div>
@@ -407,9 +770,24 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
     <span class="active-lang" id="langLabel">EN</span>
   </div>
   <div class="nav-user" id="navUser" style="display:none">
-    <div class="nav-avatar" id="navAvatar">U</div>
-    <span class="nav-user-name" id="navUserName">User</span>
-    <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
+    <button class="nav-avatar-btn" onclick="toggleUserDropdown(event)">
+      <div class="nav-avatar" id="navAvatar">U</div>
+      <i class="fas fa-chevron-down nav-avatar-caret" id="navCaret"></i>
+    </button>
+    <div class="user-dropdown" id="userDropdown">
+      <div class="user-dropdown-header">
+        <div class="ud-name" id="udName">User</div>
+        <div class="ud-email" id="udEmail"></div>
+      </div>
+      <div class="ud-divider"></div>
+      <button class="ud-item" onclick="openChangePassword()">
+        <span class="ud-item-icon">🔑</span> Change Password
+      </button>
+      <div class="ud-divider"></div>
+      <button class="ud-item danger" onclick="confirmLogout()">
+        <span class="ud-item-icon">🚪</span> Sign Out
+      </button>
+    </div>
   </div>
   <button class="btn" style="background:var(--kerala-gold);color:var(--kerala-dark);font-size:12px;padding:7px 16px;" id="btnLogin" onclick="openAuth()">
     <i class="fas fa-sign-in-alt"></i> Login
@@ -428,9 +806,38 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
     </div>
   </div>
 
-  <div class="section-title"><i class="fas fa-th-large"></i> Available Exam Papers</div>
-  <div class="exam-grid" id="homeExamGrid">
-    <!-- Cards populated by JS -->
+  <!-- Sidebar + Content layout -->
+  <div class="home-layout">
+    <!-- Left sidebar: category filter -->
+    <aside class="filter-sidebar" id="filterSidebar">
+      <div class="filter-sidebar-header">
+        <i class="fas fa-filter" style="color:var(--kerala-gold)"></i>
+        <span>Filter by Category</span>
+        <button class="filter-clear-btn" id="filterClearBtn" onclick="clearAllFilters()" style="display:none">
+          Clear All
+        </button>
+      </div>
+      <div id="filterTree">
+        <!-- Populated by JS based on available papers -->
+      </div>
+    </aside>
+
+    <!-- Right content: paper grid -->
+    <div class="home-content">
+      <div class="filter-summary" id="filterSummary" style="display:none">
+        <i class="fas fa-info-circle"></i>
+        <span id="filterSummaryText"></span>
+      </div>
+      <div id="categoryGroups">
+        <!-- Category groups populated by JS -->
+      </div>
+      <div id="noResultsMsg" style="display:none;text-align:center;padding:60px 20px;color:#aaa;">
+        <div style="font-size:48px;margin-bottom:12px;">🔍</div>
+        <div style="font-size:16px;font-weight:600;">No papers match your filter</div>
+        <div style="font-size:13px;margin-top:6px;">Try selecting different sub-categories</div>
+        <button class="btn btn-outline" style="margin-top:16px;" onclick="clearAllFilters()">Clear Filters</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -438,8 +845,16 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
 <div class="page" id="page-exams">
   <!-- State: list / taking / result -->
   <div id="examList">
-    <div class="section-title"><i class="fas fa-list"></i> Select a Paper to Practice</div>
+    <div class="section-title"><i class="fas fa-heart" style="color:#E74C3C"></i> My Favourite Exams</div>
     <div class="exam-grid" id="examListGrid"></div>
+
+    <!-- Mass Exam Results in My Exams -->
+    <div style="margin-top:36px;">
+      <div class="section-title"><i class="fas fa-users-cog"></i> My Mass Exam Results</div>
+      <div class="mass-exam-grid" id="myMassResults">
+        <div style="color:#aaa;font-size:13px;padding:20px;grid-column:1/-1;">Sign in and participate in a Mass Exam to see your results here.</div>
+      </div>
+    </div>
   </div>
 
   <div id="examTaking" style="display:none">
@@ -498,7 +913,128 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
   </div>
 </div>
 
-<!-- ─── ADMIN PAGE ─────────────────────────── -->
+<!-- ─── MASS EXAM PAGE ──────────────────────── -->
+<div class="page" id="page-massexam">
+  <!-- Sub-views: browse / join / taking / result / leaderboard -->
+  <div id="meView-browse">
+    <div class="section-title"><i class="fas fa-users-cog"></i> Mass Exams <span style="font-size:13px;font-weight:500;color:#888;margin-left:8px;">Compete live with others</span></div>
+
+    <!-- Join by code bar -->
+    <div style="background:linear-gradient(135deg,var(--kerala-dark),var(--kerala-mid));border-radius:14px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px;">
+        <div style="color:white;font-weight:700;font-size:15px;margin-bottom:4px;"><i class="fas fa-qrcode" style="color:var(--kerala-gold);margin-right:6px;"></i> Have an Exam Code?</div>
+        <div style="color:rgba(255,255,255,.6);font-size:12px;">Enter the KDE number from the announcement to join directly</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="joinCodeInput" class="form-input" placeholder="KDE1000" style="width:160px;font-family:monospace;font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+        <button class="btn btn-gold" onclick="joinByCode()"><i class="fas fa-sign-in-alt"></i> Join</button>
+      </div>
+    </div>
+
+    <!-- Upcoming / live exams grid -->
+    <div id="meUpcomingSection">
+      <div style="font-size:16px;font-weight:700;color:var(--kerala-dark);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-broadcast-tower" style="color:var(--kerala-green)"></i> Live &amp; Upcoming
+        <button class="btn btn-sm btn-outline" onclick="loadMassExams()" style="margin-left:auto;font-size:11px;"><i class="fas fa-sync"></i> Refresh</button>
+      </div>
+      <div class="mass-exam-grid" id="meGrid">
+        <div style="color:#aaa;font-size:14px;padding:30px 0;text-align:center;grid-column:1/-1;">Loading mass exams…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Join / Payment view -->
+  <div id="meView-join" style="display:none">
+    <div style="max-width:500px;margin:40px auto;">
+      <div class="mass-exam-card" id="meJoinCard"></div>
+    </div>
+  </div>
+
+  <!-- Taking view -->
+  <div id="meView-taking" style="display:none">
+    <div class="mass-exam-taking-banner" id="meTakingBanner">
+      <i class="fas fa-broadcast-tower" style="font-size:18px;"></i>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:15px;" id="meTakingTitle">Mass Exam</div>
+        <div style="font-size:12px;opacity:.75;" id="meTakingKde"></div>
+      </div>
+      <div id="meTakingTimer" style="font-size:22px;font-weight:800;letter-spacing:2px;background:rgba(255,255,255,.15);padding:6px 14px;border-radius:8px;">00:00</div>
+    </div>
+
+    <div class="exam-progress">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:13px;font-weight:700;" id="meProgressText">Question 1 of 0</span>
+        <span style="font-size:12px;color:#888;" id="meProgressPct">0% Complete</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="meProgressFill" style="width:0%;background:linear-gradient(90deg,#8B1A8B,var(--kerala-gold));"></div></div>
+      <div class="progress-stats">
+        <div class="progress-stat"><div class="dot dot-answered"></div><span id="meCntAnswered">0 Answered</span></div>
+        <div class="progress-stat"><div class="dot" style="background:#E0E4F0;"></div><span id="meCntLeft">0 Remaining</span></div>
+      </div>
+    </div>
+
+    <div class="question-area">
+      <div class="question-card">
+        <div class="question-number" id="meQNum">QUESTION 1 OF 0</div>
+        <div class="question-text" id="meQText"></div>
+        <div class="question-text-ml" id="meQTextML" style="display:none"></div>
+        <div class="options" id="meOptionList"></div>
+        <div class="question-nav-btns">
+          <button class="btn btn-outline" onclick="mePrev()"><i class="fas fa-arrow-left"></i> Previous</button>
+          <button class="btn btn-primary" onclick="meNext()">Next <i class="fas fa-arrow-right"></i></button>
+          <button class="btn" style="background:#8B1A8B;color:white;" onclick="meConfirmSubmit()"><i class="fas fa-check-circle"></i> Submit</button>
+        </div>
+      </div>
+      <div>
+        <div class="question-palette">
+          <div class="palette-title">Question Navigator</div>
+          <div class="palette-grid" id="mePaletteGrid"></div>
+          <div class="palette-legend">
+            <div><div class="pl-dot" style="background:var(--kerala-green)"></div> Answered</div>
+            <div><div class="pl-dot" style="background:var(--kerala-dark)"></div> Current</div>
+            <div><div class="pl-dot" style="background:var(--bg-body);border:1.5px solid var(--border)"></div> Not Visited</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard / result view -->
+  <div id="meView-leaderboard" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <button class="btn btn-outline" onclick="showMeView('browse')"><i class="fas fa-arrow-left"></i> Back</button>
+      <div style="flex:1">
+        <div style="font-size:18px;font-weight:800;color:var(--kerala-dark);" id="lbTitle">Leaderboard</div>
+        <div style="font-size:12px;color:#888;" id="lbMeta"></div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="refreshLeaderboard()"><i class="fas fa-sync"></i> Refresh</button>
+    </div>
+
+    <!-- My score banner -->
+    <div id="myScoreBanner" style="display:none;background:linear-gradient(135deg,#4A0080,#8B1A8B);color:white;border-radius:12px;padding:18px 22px;margin-bottom:20px;">
+      <div style="font-size:12px;opacity:.7;margin-bottom:4px;">YOUR RESULT</div>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div><div style="font-size:32px;font-weight:800;" id="myScoreNum">0</div><div style="font-size:11px;opacity:.7;">SCORE</div></div>
+        <div><div style="font-size:20px;font-weight:700;" id="myRankNum">#—</div><div style="font-size:11px;opacity:.7;">RANK</div></div>
+        <div><div style="font-size:16px;font-weight:700;" id="myPctNum">0%</div><div style="font-size:11px;opacity:.7;">PERCENTAGE</div></div>
+        <div style="flex:1;text-align:right;"><div style="font-size:13px;opacity:.8;" id="myCorrectWrong"></div></div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="margin:0;"><i class="fas fa-trophy" style="color:var(--kerala-gold);margin-right:6px;"></i> Live Rankings</h3>
+        <span style="font-size:12px;color:#888;" id="lbCount"></span>
+      </div>
+      <div class="table-wrap">
+        <table class="leaderboard-table">
+          <thead><tr><th>Rank</th><th>Name</th><th>Score</th><th>Correct</th><th>Wrong</th><th>%</th><th>Time</th></tr></thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="page" id="page-admin">
   <div class="section-title"><i class="fas fa-shield-alt"></i> Admin Dashboard</div>
   <div class="admin-grid">
@@ -507,8 +1043,10 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
       <div class="admin-nav-item active" onclick="showAdminPanel('overview')"><i class="fas fa-chart-pie"></i> Overview</div>
       <div class="admin-nav-item" onclick="showAdminPanel('upload')"><i class="fas fa-upload"></i> Upload Questions</div>
       <div class="admin-nav-item" onclick="showAdminPanel('papers')"><i class="fas fa-file-alt"></i> Manage Papers</div>
+      <div class="admin-nav-item" onclick="showAdminPanel('categories')"><i class="fas fa-sitemap"></i> Category Manager</div>
       <div class="admin-nav-item" onclick="showAdminPanel('users')"><i class="fas fa-users"></i> Registered Users</div>
       <div class="admin-nav-item" onclick="showAdminPanel('results')"><i class="fas fa-poll"></i> Results & Analytics</div>
+      <div class="admin-nav-item" onclick="showAdminPanel('massexam')"><i class="fas fa-users-cog"></i> Mass Exam Manager</div>
     </div>
     <div style="flex:1">
       <!-- Overview -->
@@ -526,53 +1064,100 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
       <div class="admin-panel" id="panel-upload">
         <div class="admin-card">
           <h3><i class="fas fa-upload"></i> Upload Question Paper (CSV)</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+          <!-- Row 1: Main Category + Sub-category -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;">
             <div>
-              <label class="form-label">Paper Category</label>
-              <select id="uploadCategory">
-                <option>Account Test (Higher) - KFC</option>
-                <option>Account Test (Lower)</option>
-                <option>Kerala Service Rules</option>
-                <option>Store Purchase</option>
-                <option>Revenue Test</option>
-                <option>Other</option>
+              <label class="form-label"><i class="fas fa-layer-group" style="color:var(--kerala-gold)"></i> Main Category</label>
+              <select id="uploadMainCat" class="form-input" onchange="loadSubCats('uploadMainCat','uploadSubCat')">
+                <option value="">— Select Main Category —</option>
+                <option>Account Test</option><option>Revenue</option><option>Forest</option>
+                <option>Panchayath</option><option>Registration</option><option>Prisons</option>
+                <option>Judiciary</option><option>Social Justice</option><option>KSEB</option>
+                <option>Local Fund Audit</option><option>Motor Vehicles</option><option>Labour</option>
+                <option>Excise</option><option>State Goods &amp; Service Tax (GST)</option><option>PWD</option>
+                <option>Municipality</option><option>Co-operative</option><option>Police</option>
+                <option>Employment Exchange</option>
               </select>
             </div>
-            <div>
-              <label class="form-label">Year</label>
-              <input class="form-input" type="number" id="uploadYear" placeholder="e.g. 2025" value="2025">
+            <div class="sub-select-wrap">
+              <label class="form-label"><i class="fas fa-tag" style="color:var(--kerala-mid)"></i> Sub-category</label>
+              <select id="uploadSubCat" class="form-input" disabled>
+                <option value="">— Select Main Category first —</option>
+              </select>
+              <span class="sub-select-label" id="uploadSubCatHint" style="display:none;color:var(--kerala-green)">
+                <i class="fas fa-info-circle"></i> Add sub-categories via Category Manager
+              </span>
             </div>
+          </div>
+          <!-- Row 2: Duration | Price | Free Preview -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;align-items:start;">
             <div>
-              <label class="form-label">Paper Title</label>
-              <input class="form-input" type="text" id="uploadTitle" placeholder="e.g. KFC Part I – January 2025">
-            </div>
-            <div>
-              <label class="form-label">Duration (minutes)</label>
+              <label class="form-label">Duration (min)</label>
               <input class="form-input" type="number" id="uploadDuration" placeholder="90" value="90">
             </div>
+            <div>
+              <label class="form-label"><i class="fas fa-tag" style="color:var(--kerala-gold)"></i> Price (₹)</label>
+              <input class="form-input" type="number" id="uploadPrice" placeholder="0" value="0" min="0">
+            </div>
+            <div>
+              <label class="form-label"><i class="fas fa-unlock" style="color:var(--kerala-green)"></i> Free Preview Qs</label>
+              <input class="form-input" type="number" id="uploadFreeCount" placeholder="—" value="0" min="0" readonly style="background:#eef3ff;color:var(--kerala-dark);font-weight:700;cursor:not-allowed;" title="Auto-counted from unlocked questions">
+            </div>
           </div>
-          <div class="upload-zone" onclick="document.getElementById('csvFile').click()" id="dropZone">
-            <i class="fas fa-file-csv"></i>
-            <strong>Click to upload CSV</strong>
-            <p style="font-size:12px;margin-top:6px;">Format: q_no, question_en, question_ml, option_a, option_b, option_c, option_d, answer</p>
-            <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="handleCSV(this)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div>
+              <label class="form-label" style="color:var(--kerala-dark);display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="background:var(--kerala-dark);color:white;border-radius:4px;padding:2px 8px;font-size:11px;">EN</span> English Questions CSV</label>
+              <div class="upload-zone" onclick="document.getElementById('csvFileEN').click()" id="dropZoneEN" style="padding:24px;">
+                <i class="fas fa-file-csv" style="font-size:28px;"></i>
+                <strong style="font-size:13px;">Upload English CSV</strong>
+                <p style="font-size:11px;margin-top:4px;">Columns: q_no, question_en, option_a…d, answer</p>
+                <p id="enFileLabel" style="font-size:11px;color:var(--kerala-green);margin-top:6px;font-weight:600;"></p>
+                <input type="file" id="csvFileEN" accept=".csv" style="display:none" onchange="handleCSV(this,'en')">
+              </div>
+            </div>
+            <div>
+              <label class="form-label" style="color:var(--kerala-dark);display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="background:var(--kerala-green);color:white;border-radius:4px;padding:2px 8px;font-size:11px;">ML</span> Malayalam Questions CSV</label>
+              <div class="upload-zone" onclick="document.getElementById('csvFileML').click()" id="dropZoneML" style="padding:24px;">
+                <i class="fas fa-file-csv" style="font-size:28px;"></i>
+                <strong style="font-size:13px;">Upload Malayalam CSV</strong>
+                <p style="font-size:11px;margin-top:4px;">Columns: q_no, question_ml, option_a…d, answer</p>
+                <p id="mlFileLabel" style="font-size:11px;color:var(--kerala-green);margin-top:6px;font-weight:600;"></p>
+                <input type="file" id="csvFileML" accept=".csv" style="display:none" onchange="handleCSV(this,'ml')">
+              </div>
+            </div>
           </div>
           <div id="csvPreview" style="display:none;margin-top:16px;">
-            <p id="csvSummary" style="font-size:13px;font-weight:600;color:var(--kerala-green);margin-bottom:10px;"></p>
-            <div class="table-wrap" style="max-height:200px;overflow-y:auto;">
-              <table><thead><tr><th>Q#</th><th>Question</th><th>A</th><th>B</th><th>C</th><th>D</th><th>Ans</th></tr></thead>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+              <p id="csvSummary" style="font-size:13px;font-weight:600;color:var(--kerala-green);margin:0;"></p>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:12px;color:#555;font-weight:600;">Lock all:</span>
+                <button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;border:1.5px solid #FFB74D;" onclick="setAllLock(true)"><i class="fas fa-lock"></i> Lock All</button>
+                <button class="btn btn-sm" style="background:#E8F5E9;color:var(--kerala-green);border:1.5px solid #81C784;" onclick="setAllLock(false)"><i class="fas fa-unlock"></i> Unlock All</button>
+              </div>
+            </div>
+            <div class="table-wrap" style="max-height:260px;overflow-y:auto;">
+              <table id="csvPreviewTableWrap"><thead><tr><th>Q#</th><th>Question (EN)</th><th id="mlColHead" style="display:none">Question (ML)</th><th>A</th><th>B</th><th>C</th><th>D</th><th>Ans</th><th title="Toggle lock for this question"><i class="fas fa-lock"></i></th></tr></thead>
               <tbody id="csvPreviewTable"></tbody></table>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:#888;display:flex;gap:16px;align-items:center;">
+              <span><i class="fas fa-unlock" style="color:var(--kerala-green)"></i> <span id="freeCount">0</span> Free questions (shown first)</span>
+              <span><i class="fas fa-lock" style="color:#E65100"></i> <span id="lockedCount">0</span> Locked questions (require payment)</span>
             </div>
             <button class="btn btn-primary" style="margin-top:14px" onclick="uploadCSVToFirebase()"><i class="fas fa-cloud-upload-alt"></i> Upload to Database</button>
           </div>
         </div>
         <div class="admin-card">
           <h3><i class="fas fa-info-circle"></i> CSV Format Guide</h3>
-          <p style="font-size:13px;color:#555;line-height:1.8;">Your CSV should have these columns:<br>
-          <code style="background:var(--bg-body);padding:2px 6px;border-radius:4px;">q_no, question_en, question_ml, option_a, option_b, option_c, option_d, answer</code><br>
-          The <strong>answer</strong> column should be A, B, C, or D.<br>
-          If <strong>question_ml</strong> is blank, only English will be shown.</p>
-          <p style="font-size:12px;color:#999;margin-top:8px;">Download the extracted sample: <a href="#" onclick="downloadSampleCSV()" style="color:var(--kerala-dark);font-weight:700;">sample_questions.csv</a></p>
+          <p style="font-size:13px;color:#555;line-height:1.8;">
+          <strong>English CSV</strong> columns:<br>
+          <code style="background:var(--bg-body);padding:2px 6px;border-radius:4px;">q_no, question_en, option_a, option_b, option_c, option_d, answer</code><br><br>
+          <strong>Malayalam CSV</strong> columns:<br>
+          <code style="background:var(--bg-body);padding:2px 6px;border-radius:4px;">q_no, question_ml, option_a, option_b, option_c, option_d, answer</code><br><br>
+          The <strong>answer</strong> column should be A, B, C, or D. Upload both or either — they'll be merged by q_no. Malayalam options override English options when both are uploaded.</p>
+          <p style="font-size:12px;color:#999;margin-top:8px;">Download sample:
+            <a href="#" onclick="downloadSampleCSV('en')" style="color:var(--kerala-dark);font-weight:700;">English CSV</a> &nbsp;|&nbsp;
+            <a href="#" onclick="downloadSampleCSV('ml')" style="color:var(--kerala-green);font-weight:700;">Malayalam CSV</a>
+          </p>
         </div>
       </div>
       <!-- Papers -->
@@ -580,8 +1165,24 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
         <div class="admin-card">
           <h3>Manage Question Papers</h3>
           <div class="table-wrap">
-            <table><thead><tr><th>Title</th><th>Category</th><th>Year</th><th>Questions</th><th>Added</th><th>Actions</th></tr></thead>
+            <table><thead><tr><th>Title</th><th>Category</th><th>Month – Year</th><th>Questions</th><th>Price</th><th>Added</th><th>Actions</th></tr></thead>
             <tbody id="papersTable"></tbody></table>
+          </div>
+        </div>
+      </div>
+      <!-- Category Manager -->
+      <div class="admin-panel" id="panel-categories">
+        <div class="admin-card">
+          <h3><i class="fas fa-sitemap"></i> Category Manager</h3>
+          <p style="font-size:13px;color:#666;margin-bottom:18px;">Select a main category on the left, then add or remove sub-categories. These sub-categories will appear in the Upload and Edit question dropdowns.</p>
+          <div class="cat-manager-grid">
+            <div class="cat-list-panel" id="catManagerList">
+              <div class="cat-list-header"><i class="fas fa-layer-group" style="margin-right:6px;"></i> Main Categories</div>
+              <!-- Populated by JS -->
+            </div>
+            <div class="subcat-panel" id="subcatPanel">
+              <div style="color:#aaa;font-size:13px;text-align:center;padding:30px 0;">← Select a main category</div>
+            </div>
           </div>
         </div>
       </div>
@@ -604,6 +1205,150 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
             <tbody id="resultsTable"></tbody></table>
           </div>
         </div>
+      </div>
+      <!-- Mass Exam Manager -->
+      <div class="admin-panel" id="panel-massexam">
+        <!-- Create new mass exam -->
+        <div class="admin-card" style="margin-bottom:16px;">
+          <h3><i class="fas fa-plus-circle" style="color:var(--kerala-gold);margin-right:6px;"></i> Create Mass Exam</h3>
+          <p style="font-size:13px;color:#666;margin-bottom:16px;">Set up a timed live exam. A unique KDE number (starting KDE1000) is auto-assigned.</p>
+          <div class="admin-mass-form">
+            <div class="admin-mass-form-row full">
+              <div>
+                <label class="form-label">Exam Title / Announcement</label>
+                <input class="form-input" id="meTitle" placeholder="e.g. Kerala Departmental Exam – Mock Test 1">
+              </div>
+            </div>
+            <div class="admin-mass-form-row">
+              <div>
+                <label class="form-label"><i class="fas fa-clock" style="color:var(--kerala-gold)"></i> Start Date &amp; Time</label>
+                <input class="form-input" id="meStart" type="datetime-local">
+              </div>
+              <div>
+                <label class="form-label"><i class="fas fa-stop-circle" style="color:var(--kerala-red)"></i> End Date &amp; Time</label>
+                <input class="form-input" id="meEnd" type="datetime-local">
+              </div>
+            </div>
+            <div class="admin-mass-form-row three">
+              <div>
+                <label class="form-label"><i class="fas fa-tag" style="color:var(--kerala-gold)"></i> Entry Fee (₹)</label>
+                <input class="form-input" id="meFee" type="number" placeholder="0" value="0" min="0">
+              </div>
+              <div>
+                <label class="form-label"><i class="fas fa-layer-group" style="color:var(--kerala-gold)"></i> Main Category</label>
+                <select id="meCat" class="form-input" onchange="loadSubCats('meCat','meSub')">
+                  <option value="">— Select —</option>
+                  <option>Account Test</option><option>Revenue</option><option>Forest</option>
+                  <option>Panchayath</option><option>Registration</option><option>Prisons</option>
+                  <option>Judiciary</option><option>Social Justice</option><option>KSEB</option>
+                  <option>Local Fund Audit</option><option>Motor Vehicles</option><option>Labour</option>
+                  <option>Excise</option><option>State Goods &amp; Service Tax (GST)</option><option>PWD</option>
+                  <option>Municipality</option><option>Co-operative</option><option>Police</option>
+                  <option>Employment Exchange</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Sub-category</label>
+                <select id="meSub" class="form-input" disabled>
+                  <option value="">— Optional —</option>
+                </select>
+              </div>
+            </div>
+            <!-- Question source -->
+            <div class="admin-mass-form-row full">
+              <div>
+                <label class="form-label">Question Source</label>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                    <input type="radio" name="meQSrc" value="paper" checked onchange="toggleMeQSource()"> Pick existing paper
+                  </label>
+                  <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                    <input type="radio" name="meQSrc" value="csv" onchange="toggleMeQSource()"> Upload CSV file
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div id="meQSrcPaper" class="admin-mass-form-row full">
+              <div>
+                <label class="form-label">Select Paper</label>
+                <select id="mePaperSel" class="form-input">
+                  <option value="">— Select a question paper —</option>
+                </select>
+              </div>
+            </div>
+            <div id="meQSrcManual" style="display:none;">
+              <label class="form-label"><i class="fas fa-file-csv" style="color:var(--kerala-gold);margin-right:6px;"></i> Upload Questions CSV</label>
+              <div style="border:2px dashed var(--border);border-radius:10px;padding:18px 20px;text-align:center;cursor:pointer;transition:border-color .2s;background:#FAFBFF;" id="meCsvDropZone" onclick="document.getElementById('meCsvFile').click()" ondragover="event.preventDefault();this.style.borderColor='var(--kerala-gold)'" ondragleave="this.style.borderColor=''" ondrop="meCsvDrop(event)">
+                <i class="fas fa-file-csv" style="font-size:28px;color:var(--kerala-gold);margin-bottom:8px;display:block;"></i>
+                <strong style="font-size:13px;color:var(--kerala-dark);">Click or drag a CSV file here</strong>
+                <p style="font-size:11px;color:#888;margin-top:4px;">Columns: q_no, question_en, option_a, option_b, option_c, option_d, answer</p>
+                <p id="meCsvFileLabel" style="font-size:12px;color:var(--kerala-green);margin-top:6px;font-weight:600;"></p>
+                <input type="file" id="meCsvFile" accept=".csv" style="display:none" onchange="handleMeCsv(this)">
+              </div>
+              <div id="meCsvPreview" style="display:none;margin-top:10px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+                  <span id="meCsvSummary" style="font-size:13px;font-weight:600;color:var(--kerala-green);"></span>
+                  <a href="#" onclick="downloadSampleCSV('en')" style="font-size:11px;color:var(--kerala-dark);margin-left:auto;"><i class="fas fa-download"></i> Sample CSV</a>
+                </div>
+                <div class="table-wrap" style="max-height:180px;overflow-y:auto;">
+                  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead><tr><th style="background:var(--kerala-dark);color:white;padding:6px 8px;">Q#</th><th style="background:var(--kerala-dark);color:white;padding:6px 8px;">Question</th><th style="background:var(--kerala-dark);color:white;padding:6px 8px;">A</th><th style="background:var(--kerala-dark);color:white;padding:6px 8px;">B</th><th style="background:var(--kerala-dark);color:white;padding:6px 8px;">C</th><th style="background:var(--kerala-dark);color:white;padding:6px 8px;">D</th><th style="background:var(--kerala-dark);color:white;padding:6px 8px;">Ans</th></tr></thead>
+                    <tbody id="meCsvPreviewTable"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn btn-primary" onclick="createMassExam()"><i class="fas fa-rocket"></i> Create Mass Exam</button>
+              <span style="font-size:12px;color:#888;">A unique KDE number will be auto-assigned</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing mass exams table -->
+        <div class="admin-card">
+          <h3><i class="fas fa-list-alt" style="margin-right:6px;"></i> All Mass Exams</h3>
+          <div class="table-wrap">
+            <table><thead><tr><th>KDE No.</th><th>Title</th><th>Start</th><th>End</th><th>Fee</th><th>Participants</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="meAdminTable"></tbody></table>
+          </div>
+        </div>
+      </div> ─────────── -->
+<div id="signOutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+    <div style="font-size:40px;margin-bottom:12px;">🚪</div>
+    <h3 style="font-size:18px;font-weight:700;color:var(--kerala-dark);margin-bottom:8px;">Sign Out?</h3>
+    <p style="font-size:14px;color:#666;margin-bottom:24px;line-height:1.6;">Are you sure you want to sign out of your account?</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-outline" onclick="document.getElementById('signOutModal').style.display='none'">Cancel</button>
+      <button class="btn btn-danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CHANGE PASSWORD MODAL ─────────────────── -->
+<div id="changePwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;width:90%;max-width:380px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+    <div style="background:var(--kerala-dark);color:white;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-weight:700;font-size:16px;">🔑 Change Password</div>
+        <div id="cpEmail" style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;"></div>
+      </div>
+      <span onclick="document.getElementById('changePwModal').style.display='none'" style="cursor:pointer;font-size:20px;color:rgba(255,255,255,.6);line-height:1;">&times;</span>
+    </div>
+    <div style="padding:24px 22px;">
+      <div id="cpError" style="color:var(--kerala-red);font-size:13px;margin-bottom:10px;min-height:18px;"></div>
+      <div id="cpSuccess" style="color:var(--kerala-green);font-size:13px;margin-bottom:10px;min-height:18px;"></div>
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Current Password</label>
+      <input id="cpOld" type="password" class="form-input" placeholder="Enter current password" style="width:100%;margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px;">New Password</label>
+      <input id="cpNew" type="password" class="form-input" placeholder="At least 6 characters" style="width:100%;margin-bottom:14px;">
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Confirm New Password</label>
+      <input id="cpConfirm" type="password" class="form-input" placeholder="Re-enter new password" style="width:100%;margin-bottom:20px;"
+        onkeydown="if(event.key==='Enter') doChangePassword()">
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('changePwModal').style.display='none'">Cancel</button>
+        <button class="btn btn-primary" style="flex:1" onclick="doChangePassword()"><i class="fas fa-key"></i> Update</button>
       </div>
     </div>
   </div>
@@ -696,6 +1441,143 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
   </div>
 </div>
 
+<!-- ─── PAYWALL MODAL ─────────────────────────── -->
+<div id="paywallModal" style="display:none;position:fixed;inset:0;background:rgba(10,20,50,.75);backdrop-filter:blur(4px);z-index:600;align-items:center;justify-content:center;padding:20px;">
+  <div class="paywall-card">
+    <div style="font-size:48px;margin-bottom:8px;">🔒</div>
+    <h2 style="font-size:18px;font-weight:800;color:var(--kerala-dark);margin-bottom:6px;" id="paywallTitle">Premium Question Paper</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:16px;" id="paywallDesc">Unlock all questions to practice the full paper.</p>
+    <div class="price-badge" id="paywallPrice">₹0 <span>one-time</span></div>
+    <div style="background:var(--bg-body);border-radius:10px;padding:14px;margin:16px 0;font-size:13px;color:#555;text-align:left;">
+      <div style="margin-bottom:6px;"><i class="fas fa-check" style="color:var(--kerala-green);margin-right:6px;"></i> Access all <strong id="paywallTotal">0</strong> questions</div>
+      <div style="margin-bottom:6px;"><i class="fas fa-check" style="color:var(--kerala-green);margin-right:6px;"></i> Take full timed exam</div>
+      <div><i class="fas fa-check" style="color:var(--kerala-green);margin-right:6px;"></i> Review answers & analytics</div>
+    </div>
+    <button class="btn btn-gold btn-block" onclick="proceedPayment()" style="margin-bottom:10px;"><i class="fas fa-credit-card"></i> Pay ₹<span id="paywallPriceBtn">0</span> & Unlock</button>
+    <button class="btn btn-outline btn-block" onclick="startFreePreview()" id="paywallFreeBtn"><i class="fas fa-eye"></i> Try <span id="paywallFreeN">0</span> Free Questions</button>
+    <button onclick="document.getElementById('paywallModal').style.display='none'" style="margin-top:12px;background:none;border:none;color:#aaa;cursor:pointer;font-size:13px;">✕ Close</button>
+  </div>
+</div>
+
+<!-- ─── EDIT PAPER MODAL ──────────────────────── -->
+<div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(10,20,50,.75);backdrop-filter:blur(4px);z-index:500;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;">
+  <div style="background:white;border-radius:16px;width:100%;max-width:1100px;margin:auto;box-shadow:0 12px 60px rgba(0,0,0,.3);overflow:hidden;">
+    <!-- Header bar -->
+    <div style="background:linear-gradient(135deg,var(--kerala-dark),var(--kerala-mid));padding:18px 24px;display:flex;align-items:center;gap:12px;">
+      <i class="fas fa-edit" style="color:var(--kerala-gold);font-size:18px;"></i>
+      <span style="color:white;font-size:17px;font-weight:700;flex:1;">Edit Question Paper</span>
+      <button id="saveEditBtn" class="btn btn-gold btn-sm" onclick="saveEditedPaper()"><i class="fas fa-save"></i> Save All Changes</button>
+      <button onclick="document.getElementById('editModal').style.display='none'" style="background:rgba(255,255,255,.15);border:none;color:white;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;margin-left:8px;">✕</button>
+    </div>
+    <!-- Paper metadata fields -->
+    <div style="padding:20px 24px;border-bottom:2px solid var(--bg-body);background:#FAFBFF;">
+      <div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;"><i class="fas fa-file-alt" style="margin-right:6px;color:var(--kerala-gold)"></i>Paper Details</div>
+      <!-- Row 1: Main Category | Sub-category -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;align-items:start;">
+        <div>
+          <label class="form-label"><i class="fas fa-layer-group" style="color:var(--kerala-gold)"></i> Main Category</label>
+          <select id="editMainCat" class="form-input" style="font-size:13px;padding:9px 10px;" onchange="loadSubCats('editMainCat','editSubCat')">
+            <option value="">— Select —</option>
+            <option>Account Test</option><option>Revenue</option><option>Forest</option>
+            <option>Panchayath</option><option>Registration</option><option>Prisons</option>
+            <option>Judiciary</option><option>Social Justice</option><option>KSEB</option>
+            <option>Local Fund Audit</option><option>Motor Vehicles</option><option>Labour</option>
+            <option>Excise</option><option>State Goods &amp; Service Tax (GST)</option><option>PWD</option>
+            <option>Municipality</option><option>Co-operative</option><option>Police</option>
+            <option>Employment Exchange</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label"><i class="fas fa-tag" style="color:var(--kerala-mid)"></i> Sub-category</label>
+          <select id="editSubCat" class="form-input" style="font-size:13px;padding:9px 10px;" disabled>
+            <option value="">— Select Main Category first —</option>
+          </select>
+        </div>
+      </div>
+      <!-- Row 2: Duration | Questions | Price -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:start;">
+        <div>
+          <label class="form-label">Duration (min)</label>
+          <input class="form-input" id="editDuration" type="number" placeholder="90" style="font-size:13px;">
+        </div>
+        <div>
+          <label class="form-label">Questions</label>
+          <input class="form-input" id="editQCount" type="number" placeholder="100" style="font-size:13px;background:#eee;" readonly title="Auto-calculated from question list">
+        </div>
+        <div>
+          <label class="form-label"><i class="fas fa-tag" style="color:var(--kerala-gold)"></i> Price (₹)</label>
+          <input class="form-input" id="editPrice" type="number" placeholder="0" min="0" style="font-size:13px;">
+        </div>
+      </div>
+    </div>
+    <!-- Questions table -->
+    <div style="padding:20px;overflow-x:auto;">
+      <div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;"><i class="fas fa-list-ol" style="margin-right:6px;color:var(--kerala-gold)"></i>Questions</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr>
+            <th style="width:40px;">Q#</th>
+            <th style="min-width:340px;">Question</th>
+            <th style="min-width:130px;">Option A</th>
+            <th style="min-width:130px;">Option B</th>
+            <th style="min-width:130px;">Option C</th>
+            <th style="min-width:130px;">Option D</th>
+            <th style="width:70px;">Answer</th>
+            <th style="width:50px;"></th>
+          </tr>
+        </thead>
+        <tbody id="editQList"></tbody>
+      </table>
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-outline" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
+      <button class="btn btn-gold" onclick="saveEditedPaper()"><i class="fas fa-save"></i> Save All Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MASS EXAM PAYMENT MODAL ─────────────── -->
+<div id="mePayModal" style="display:none;position:fixed;inset:0;background:rgba(10,20,50,.78);backdrop-filter:blur(4px);z-index:620;align-items:center;justify-content:center;padding:20px;">
+  <div class="join-exam-modal">
+    <div style="font-size:44px;margin-bottom:6px;">🏟️</div>
+    <div class="kde-number-display" id="mePayKde">KDE1000</div>
+    <h2 style="font-size:18px;font-weight:800;color:var(--kerala-dark);margin-bottom:4px;" id="mePayTitle">Mass Exam</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:12px;" id="mePayDesc">Compete live with other candidates</p>
+    <div style="background:var(--bg-body);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:#555;text-align:left;">
+      <div style="margin-bottom:6px;"><i class="fas fa-clock" style="color:var(--kerala-gold);margin-right:6px;"></i> Starts: <strong id="mePayStart">—</strong></div>
+      <div style="margin-bottom:6px;"><i class="fas fa-stop-circle" style="color:var(--kerala-red);margin-right:6px;"></i> Ends: <strong id="mePayEnd">—</strong></div>
+      <div style="margin-bottom:6px;"><i class="fas fa-question-circle" style="color:var(--kerala-dark);margin-right:6px;"></i> Questions: <strong id="mePayQCount">—</strong></div>
+      <div><i class="fas fa-users" style="color:var(--kerala-green);margin-right:6px;"></i> Registered: <strong id="mePayRegCount">—</strong> candidates so far</div>
+    </div>
+    <div id="mePayFeeSection">
+      <div class="price-badge" id="mePayFee" style="margin:0 auto 14px;">₹0 <span>entry fee</span></div>
+      <button class="btn btn-gold btn-block" onclick="meConfirmJoin()" style="margin-bottom:10px;font-size:15px;padding:13px;"><i class="fas fa-credit-card"></i> Pay &amp; Register</button>
+    </div>
+    <div id="mePayFreeSection" style="display:none">
+      <button class="btn btn-primary btn-block" onclick="meConfirmJoin()" style="margin-bottom:10px;font-size:15px;padding:13px;"><i class="fas fa-sign-in-alt"></i> Register Free &amp; Join</button>
+    </div>
+    <button onclick="document.getElementById('mePayModal').style.display='none'" style="margin-top:6px;background:none;border:none;color:#aaa;cursor:pointer;font-size:13px;">✕ Close</button>
+  </div>
+</div>
+
+<!-- ─── CATEGORY BUNDLE PAYWALL MODAL ──────────── -->
+<div id="bundlePaywallModal" style="display:none;position:fixed;inset:0;background:rgba(10,20,50,.75);backdrop-filter:blur(4px);z-index:610;align-items:center;justify-content:center;padding:20px;">
+  <div class="bundle-paywall-card">
+    <div style="font-size:52px;margin-bottom:6px;">📦</div>
+    <h2 style="font-size:19px;font-weight:800;color:var(--kerala-dark);margin-bottom:6px;" id="bundlePaywallTitle">Category Bundle</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:6px;" id="bundlePaywallDesc">Unlock all question papers in this category for 1 year.</p>
+    <div class="price-badge" id="bundlePaywallPrice" style="font-size:28px;padding:10px 28px;margin:14px auto;">₹0 <span>bundle</span></div>
+    <div class="bundle-unlock-info">
+      <div><i class="fas fa-check" style="color:var(--kerala-green);margin-right:6px;"></i> Unlocks <strong id="bundleCardCount">0</strong> question papers</div>
+      <div><i class="fas fa-check" style="color:var(--kerala-green);margin-right:6px;"></i> Full access to all questions in each paper</div>
+      <div><i class="fas fa-calendar-check" style="color:var(--kerala-green);margin-right:6px;"></i> Access valid for <strong>1 year</strong> from purchase date</div>
+      <div><i class="fas fa-tags" style="color:var(--kerala-green);margin-right:6px;"></i> Save <strong id="bundleSavings">₹0</strong> vs buying individually</div>
+    </div>
+    <button class="btn btn-gold btn-block" onclick="proceedBundlePayment()" style="margin-bottom:10px;font-size:15px;padding:13px;"><i class="fas fa-credit-card"></i> Pay ₹<span id="bundlePaywallPriceBtn">0</span> & Unlock All</button>
+    <button onclick="document.getElementById('bundlePaywallModal').style.display='none'" style="margin-top:8px;background:none;border:none;color:#aaa;cursor:pointer;font-size:13px;">✕ Close</button>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -737,15 +1619,16 @@ let timerInterval = null;
 let timeLeft = 5400;
 let examStartTime = null;
 let parsedCSV = [];
+let favoriteIds = new Set(); // exam paper IDs favorited by the user
 
 // ─── DEMO DATA ───────────────────────────────
 const demoExams = [
-  { id: 'kfc2025', title: 'Account Test (Higher) – KFC Part I', category: 'Account Test (Higher) - KFC', year: 2025, month: 'January', duration: 90, qCount: 100, hasML: true },
-  { id: 'ksr2024', title: 'Kerala Service Rules – Jan 2024', category: 'Kerala Service Rules', year: 2024, month: 'January', duration: 90, qCount: 100, hasML: true },
-  { id: 'acc_lower_2024', title: 'Account Test (Lower) – Aug 2024', category: 'Account Test (Lower)', year: 2024, month: 'August', duration: 60, qCount: 100, hasML: false },
-  { id: 'revenue2024', title: 'Revenue Test – Jan 2024', category: 'Revenue Test', year: 2024, month: 'January', duration: 90, qCount: 100, hasML: true },
-  { id: 'store2023', title: 'Store Purchase Test – Aug 2023', category: 'Store Purchase', year: 2023, month: 'August', duration: 90, qCount: 100, hasML: false },
-  { id: 'kfc2024aug', title: 'Account Test (Higher) – KFC Part I Aug 2024', category: 'Account Test (Higher) - KFC', year: 2024, month: 'August', duration: 90, qCount: 100, hasML: true },
+  { id: 'kfc2025', title: 'Account Test (Higher) – KFC Part I', category: 'Account Test', year: 2025, month: 'January', duration: 90, qCount: 100, hasML: true },
+  { id: 'ksr2024', title: 'Kerala Service Rules – Jan 2024', category: 'Account Test', year: 2024, month: 'January', duration: 90, qCount: 100, hasML: true },
+  { id: 'acc_lower_2024', title: 'Account Test (Lower) – Aug 2024', category: 'Account Test', year: 2024, month: 'August', duration: 60, qCount: 100, hasML: false },
+  { id: 'revenue2024', title: 'Revenue Test – Jan 2024', category: 'Revenue', year: 2024, month: 'January', duration: 90, qCount: 100, hasML: true },
+  { id: 'store2023', title: 'Store Purchase Test – Aug 2023', category: 'PWD', year: 2023, month: 'August', duration: 90, qCount: 100, hasML: false },
+  { id: 'kfc2024aug', title: 'Account Test (Higher) – KFC Part I Aug 2024', category: 'Account Test', year: 2024, month: 'August', duration: 90, qCount: 100, hasML: true },
 ];
 
 // ─── NAV ─────────────────────────────────────
@@ -753,9 +1636,11 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
-  document.getElementById('tab-' + page).classList.add('active');
+  const tabEl = document.getElementById('tab-' + page);
+  if (tabEl) tabEl.classList.add('active');
   if (page === 'admin') loadAdminData();
   if (page === 'exams') renderExamList();
+  if (page === 'massexam') { showMeView('browse'); loadMassExams(); }
 }
 
 // ─── AUTH FUNCTIONS ───────────────────────────
@@ -869,7 +1754,23 @@ async function saveUserToFirestore(phone) {
   } catch(e) { console.error(e); }
 }
 
+// ─── USER DROPDOWN ────────────────────────────
+function toggleUserDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('userDropdown').classList.toggle('open');
+}
+document.addEventListener('click', () => {
+  const dd = document.getElementById('userDropdown');
+  if (dd) dd.classList.remove('open');
+});
+
+function confirmLogout() {
+  document.getElementById('userDropdown').classList.remove('open');
+  document.getElementById('signOutModal').style.display = 'flex';
+}
+
 function logout() {
+  document.getElementById('signOutModal').style.display = 'none';
   if (auth) auth.signOut();
   currentUser = null; isAdmin = false;
   document.getElementById('navUser').style.display = 'none';
@@ -877,6 +1778,39 @@ function logout() {
   document.getElementById('tab-admin').style.display = 'none';
   showToast('Signed out successfully');
   showPage('home');
+}
+
+// ─── CHANGE PASSWORD ───────────────────────────
+function openChangePassword() {
+  document.getElementById('userDropdown').classList.remove('open');
+  document.getElementById('cpEmail').textContent = currentUser ? currentUser.email : '';
+  document.getElementById('cpOld').value = '';
+  document.getElementById('cpNew').value = '';
+  document.getElementById('cpConfirm').value = '';
+  document.getElementById('cpError').textContent = '';
+  document.getElementById('cpSuccess').textContent = '';
+  document.getElementById('changePwModal').style.display = 'flex';
+}
+
+async function doChangePassword() {
+  const oldPw = document.getElementById('cpOld').value.trim();
+  const newPw = document.getElementById('cpNew').value.trim();
+  const confirm = document.getElementById('cpConfirm').value.trim();
+  const errEl = document.getElementById('cpError');
+  const okEl = document.getElementById('cpSuccess');
+  errEl.textContent = ''; okEl.textContent = '';
+  if (!oldPw || !newPw || !confirm) { errEl.textContent = 'Please fill all fields.'; return; }
+  if (newPw.length < 6) { errEl.textContent = 'New password must be at least 6 characters.'; return; }
+  if (newPw !== confirm) { errEl.textContent = 'Passwords do not match.'; return; }
+  try {
+    const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, oldPw);
+    await currentUser.reauthenticateWithCredential(cred);
+    await currentUser.updatePassword(newPw);
+    okEl.textContent = '✅ Password changed successfully!';
+    setTimeout(() => { document.getElementById('changePwModal').style.display = 'none'; }, 1800);
+  } catch(e) {
+    errEl.textContent = e.code === 'auth/wrong-password' ? 'Current password is incorrect.' : (e.message || 'Error changing password.');
+  }
 }
 
 // Auth state observer
@@ -887,9 +1821,13 @@ if (auth) {
       isAdmin = ADMIN_EMAILS.includes(user.email);
       document.getElementById('navUser').style.display = 'flex';
       document.getElementById('btnLogin').style.display = 'none';
-      document.getElementById('navAvatar').textContent = (user.displayName || user.email || 'U')[0].toUpperCase();
-      document.getElementById('navUserName').textContent = user.displayName || user.email || 'User';
+      const initials = (user.displayName || user.email || 'U')[0].toUpperCase();
+      document.getElementById('navAvatar').textContent = initials;
+      document.getElementById('udName').textContent = user.displayName || user.email || 'User';
+      document.getElementById('udEmail').textContent = user.email || '';
       if (isAdmin) document.getElementById('tab-admin').style.display = 'flex';
+      loadUserPurchases(user.uid);
+      loadFavorites();
     }
   });
 }
@@ -901,55 +1839,338 @@ function toggleLang() {
   if (currentExam) renderQuestion(currentQIdx);
 }
 
-// ─── HOME RENDER ─────────────────────────────
-function renderHomeGrid() {
-  const grid = document.getElementById('homeExamGrid');
-  const papers = examPapers.length ? examPapers : demoExams;
-  grid.innerHTML = papers.map(e => examCardHTML(e)).join('');
-  document.getElementById('statPapers').textContent = papers.length;
+// ─── FAVORITES ───────────────────────────────
+async function loadFavorites() {
+  if (!db || !currentUser) {
+    // Load from localStorage as fallback
+    try { favoriteIds = new Set(JSON.parse(localStorage.getItem('favExams') || '[]')); } catch(e) { favoriteIds = new Set(); }
+    return;
+  }
+  try {
+    const doc = await db.collection('users').doc(currentUser.uid).get();
+    if (doc.exists && doc.data().favorites) {
+      favoriteIds = new Set(doc.data().favorites);
+    }
+  } catch(e) { favoriteIds = new Set(); }
 }
 
-function examCardHTML(e) {
-  const icons = { 'Account Test (Higher) - KFC': '📊', 'Kerala Service Rules': '⚖️', 'Account Test (Lower)': '📋', 'Revenue Test': '🏦', 'Store Purchase': '🛒' };
-  const icon = icons[e.category] || '📄';
+async function saveFavorites() {
+  try { localStorage.setItem('favExams', JSON.stringify([...favoriteIds])); } catch(e) {}
+  if (!db || !currentUser) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).set(
+      { favorites: [...favoriteIds] }, { merge: true }
+    );
+  } catch(e) {}
+}
+
+function toggleFavorite(examId) {
+  if (favoriteIds.has(examId)) {
+    favoriteIds.delete(examId);
+    showToast('Removed from My Exams');
+  } else {
+    favoriteIds.add(examId);
+    showToast('❤️ Added to My Exams!');
+  }
+  saveFavorites();
+  renderHomeGrid();
+  // If on exams page, refresh
+  if (document.getElementById('page-exams').classList.contains('active')) renderExamList();
+}
+
+function renderMyFavoriteExams() {
+  const grid = document.getElementById('examListGrid');
+  const papers = examPapers.length ? examPapers : demoExams;
+  const favPapers = papers.filter(e => favoriteIds.has(e.id));
+  if (!favPapers.length) {
+    grid.innerHTML = `<div class="my-exams-empty" style="grid-column:1/-1;">
+      <div class="empty-icon">🤍</div>
+      <p>No favourited exams yet</p>
+      <span>Go to <strong>Home</strong> and tap ❤️ on any exam card to add it here.</span>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = favPapers.map(e => examCardHTML(e)).join('');
+}
+
+// ─── HOME RENDER ─────────────────────────────
+const MAIN_CATEGORIES = [
+  'Account Test', 'Revenue', 'Forest', 'Panchayath', 'Registration',
+  'Prisons', 'Judiciary', 'Social Justice', 'KSEB', 'Local Fund Audit',
+  'Motor Vehicles', 'Labour', 'Excise', 'State Goods & Service Tax (GST)',
+  'PWD', 'Municipality', 'Co-operative', 'Police', 'Employment Exchange'
+];
+
+const CATEGORY_ICONS = {
+  'Account Test': '📊', 'Revenue': '🏦', 'Forest': '🌳', 'Panchayath': '🏘️',
+  'Registration': '📝', 'Prisons': '🔐', 'Judiciary': '⚖️', 'Social Justice': '🤝',
+  'KSEB': '⚡', 'Local Fund Audit': '🔍', 'Motor Vehicles': '🚗', 'Labour': '👷',
+  'Excise': '🍶', 'State Goods & Service Tax (GST)': '🧾', 'PWD': '🏗️',
+  'Municipality': '🏙️', 'Co-operative': '🤲', 'Police': '👮', 'Employment Exchange': '💼'
+};
+
+// ─── FILTER STATE ────────────────────────────
+let activeSubcatFilters = new Set(); // "MainCat|||SubCat" keys
+
+function renderHomeGrid() {
+  const papers = examPapers.length ? examPapers : demoExams;
+  document.getElementById('statPapers').textContent = papers.length;
+
+  // Group papers: mainCat → subCat → [papers]
+  const grouped = {};      // mainCat → subCat → [papers]
+  const mainPapers = {};   // mainCat → [all papers]
+  papers.forEach(e => {
+    const mainCat = e.mainCategory || e.category || 'Other';
+    const subCat  = (e.category !== e.mainCategory ? e.category : '') || '';
+    if (!grouped[mainCat]) grouped[mainCat] = {};
+    if (!grouped[mainCat][subCat]) grouped[mainCat][subCat] = [];
+    grouped[mainCat][subCat].push(e);
+    if (!mainPapers[mainCat]) mainPapers[mainCat] = [];
+    mainPapers[mainCat].push(e);
+  });
+
+  const orderedCats = MAIN_CATEGORIES.filter(c => grouped[c]);
+  const extraCats = Object.keys(grouped).filter(c => !MAIN_CATEGORIES.includes(c));
+  const allCats = [...orderedCats, ...extraCats];
+
+  if (allCats.length === 0) {
+    document.getElementById('categoryGroups').innerHTML = '<p style="color:#888;font-size:14px;">No exam papers available yet.</p>';
+    document.getElementById('filterTree').innerHTML = '<p style="font-size:12px;color:#aaa;padding:16px;">No papers yet.</p>';
+    return;
+  }
+
+  // ── Build sidebar filter tree ───────────────
+  const filterTree = document.getElementById('filterTree');
+  filterTree.innerHTML = allCats.map(cat => {
+    const icon = CATEGORY_ICONS[cat] || '📄';
+    const subcats = Object.keys(grouped[cat]).filter(s => s !== '');
+    const totalCount = mainPapers[cat].length;
+
+    if (subcats.length === 0) {
+      // No sub-categories: show the main cat as a clickable checkbox itself
+      const key = cat + '|||';
+      const checked = activeSubcatFilters.has(key);
+      return `<div class="filter-main-cat" id="fmc_${safeid(cat)}">
+        <div class="filter-subcat-item ${checked?'checked':''}" style="padding-left:14px;" onclick="toggleSubcatFilter('${esc2(cat)}','')">
+          <input type="checkbox" id="fcb_${safeid(cat)}_" ${checked?'checked':''} onchange="toggleSubcatFilter('${esc2(cat)}','')" onclick="event.stopPropagation()">
+          <span class="filter-main-cat-icon">${icon}</span>
+          <label for="fcb_${safeid(cat)}_">${cat}</label>
+          <span class="filter-subcat-count">${totalCount}</span>
+        </div>
+      </div>`;
+    }
+
+    const subcatRows = subcats.map(sub => {
+      const key = cat + '|||' + sub;
+      const checked = activeSubcatFilters.has(key);
+      const cnt = grouped[cat][sub].length;
+      return `<div class="filter-subcat-item ${checked?'checked':''}" id="fsi_${safeid(cat)}_${safeid(sub)}" onclick="toggleSubcatFilter('${esc2(cat)}','${esc2(sub)}')">
+        <input type="checkbox" id="fcb_${safeid(cat)}_${safeid(sub)}" ${checked?'checked':''} onchange="toggleSubcatFilter('${esc2(cat)}','${esc2(sub)}')" onclick="event.stopPropagation()">
+        <label for="fcb_${safeid(cat)}_${safeid(sub)}">${sub}</label>
+        <span class="filter-subcat-count">${cnt}</span>
+      </div>`;
+    }).join('');
+
+    const isOpen = subcats.some(sub => activeSubcatFilters.has(cat + '|||' + sub));
+    return `<div class="filter-main-cat ${isOpen?'open':''}" id="fmc_${safeid(cat)}">
+      <div class="filter-main-cat-header" onclick="toggleFilterCat('${esc2(cat)}')">
+        <span class="filter-main-cat-icon">${icon}</span>
+        <span class="filter-main-cat-name">${cat}</span>
+        <span class="filter-main-cat-count">${totalCount}</span>
+        <i class="fas fa-chevron-down filter-main-cat-arrow"></i>
+      </div>
+      <div class="filter-subcats">${subcatRows}</div>
+    </div>`;
+  }).join('');
+
+  // ── Render paper cards ──────────────────────
+  renderFilteredCards(grouped, allCats);
+}
+
+function safeid(s) { return s.replace(/[^a-zA-Z0-9]/g,'_'); }
+function esc2(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+function toggleFilterCat(cat) {
+  const el = document.getElementById('fmc_' + safeid(cat));
+  if (el) el.classList.toggle('open');
+}
+
+function toggleSubcatFilter(cat, sub) {
+  const key = cat + '|||' + sub;
+  if (activeSubcatFilters.has(key)) {
+    activeSubcatFilters.delete(key);
+  } else {
+    activeSubcatFilters.add(key);
+  }
+  renderHomeGrid();
+  // Show/hide clear button
+  const clearBtn = document.getElementById('filterClearBtn');
+  if (clearBtn) clearBtn.style.display = activeSubcatFilters.size > 0 ? 'block' : 'none';
+}
+
+function clearAllFilters() {
+  activeSubcatFilters.clear();
+  document.getElementById('filterClearBtn').style.display = 'none';
+  renderHomeGrid();
+}
+
+function renderFilteredCards(grouped, allCats) {
+  const container = document.getElementById('categoryGroups');
+  const summaryEl = document.getElementById('filterSummary');
+  const noResults = document.getElementById('noResultsMsg');
+  const hasFilter = activeSubcatFilters.size > 0;
+
+  let totalShown = 0;
+
+  container.innerHTML = allCats.map((cat, idx) => {
+    const catNum = MAIN_CATEGORIES.indexOf(cat) + 1;
+    const icon = CATEGORY_ICONS[cat] || '📄';
+    const subcats = grouped[cat];
+
+    // Determine which papers to show
+    let papersToShow = [];
+    if (!hasFilter) {
+      // Show all
+      Object.values(subcats).forEach(arr => papersToShow.push(...arr));
+    } else {
+      // Only papers matching active filters
+      Object.entries(subcats).forEach(([sub, arr]) => {
+        const key = cat + '|||' + sub;
+        // Also match main-cat-only filter (no subcat)
+        const mainKey = cat + '|||';
+        if (activeSubcatFilters.has(key) || activeSubcatFilters.has(mainKey)) {
+          papersToShow.push(...arr);
+        }
+      });
+    }
+
+    if (!papersToShow.length) return '';
+    totalShown += papersToShow.length;
+
+    const numLabel = catNum > 0 ? catNum + '. ' : '';
+    const cards = papersToShow.map(e => examCardHTML(e)).join('');
+    return `<div class="category-section" id="catSection_${idx}">
+      <div class="section-title">
+        <span class="cat-icon">${icon}</span> ${numLabel}${cat}
+      </div>
+      <div class="exam-grid">${cards}</div>
+    </div>`;
+  }).join('');
+
+  // Filter summary bar
+  if (hasFilter && summaryEl) {
+    const labels = [...activeSubcatFilters].map(k => {
+      const parts = k.split('|||');
+      return parts[1] ? parts[1] : parts[0];
+    });
+    summaryEl.style.display = 'flex';
+    document.getElementById('filterSummaryText').textContent =
+      `Showing ${totalShown} paper${totalShown!==1?'s':''} for: ${labels.join(', ')}`;
+  } else if (summaryEl) {
+    summaryEl.style.display = 'none';
+  }
+
+  if (noResults) noResults.style.display = (totalShown === 0 && hasFilter) ? 'block' : 'none';
+}
+
+function stripMonthYear(title) {
+  return title
+    .replace(/\s*\u2013\s*(January|February|March|April|May|June|July|August|September|October|November|December)\b/gi, '')
+    .replace(/\s*\u2013\s*\d{4}\b/g, '')
+    .replace(/\s+\d{4}\b/g, '')
+    .replace(/\s*\u2013\s*$/, '')
+    .trim();
+}
+
+function examCardHTML(e, showFavBtn = true) {
+  const icon = CATEGORY_ICONS[e.category] || '📄';
+  const isLocked = e.isLocked && (e.price || 0) > 0;
+  const priceBadge = isLocked
+    ? `<span class="badge badge-lock"><i class="fas fa-lock" style="font-size:9px"></i> ₹${e.price}</span>`
+    : `<span class="badge badge-free"><i class="fas fa-unlock" style="font-size:9px"></i> Free</span>`;
+  const freeLine = isLocked && e.freeCount > 0
+    ? `<p style="font-size:11px;color:var(--kerala-green);margin-top:6px;"><i class="fas fa-eye"></i> ${e.freeCount} free preview questions</p>` : '';
+  const lockedOverlay = isLocked
+    ? `<div class="exam-locked-overlay" onclick="event.stopPropagation();openPaywall('${e.id}')">
+        <div class="locked-icon">🔒</div>
+        <div>Unlock for ₹${e.price}</div>
+        <div style="font-size:11px;font-weight:400;opacity:.8">${e.freeCount||0} free questions included</div>
+      </div>` : '';
+  const isFav = favoriteIds.has(e.id);
+  const favBtn = showFavBtn ? `<button class="fav-btn ${isFav?'active':''}" onclick="event.stopPropagation();toggleFavorite('${e.id}')" title="${isFav?'Remove from My Exams':'Add to My Exams'}">
+    <span class="fav-icon">${isFav?'❤️':'🤍'}</span>
+  </button>` : '';
   return `<div class="exam-card" onclick="openExamStart('${e.id}')">
+    ${lockedOverlay}
+    ${favBtn}
     <div class="exam-card-icon">${icon}</div>
-    <h3>${e.title}</h3>
+    <h3>${stripMonthYear(e.title)}</h3>
     <p>${e.category}</p>
     <div class="exam-card-meta">
       <span class="badge badge-blue">${e.qCount} Questions</span>
       <span class="badge badge-gold">${e.duration} min</span>
       <span class="badge badge-green">${e.year}</span>
+      ${priceBadge}
     </div>
+    ${freeLine}
   </div>`;
 }
 
 function renderExamList() {
-  const grid = document.getElementById('examListGrid');
+  renderMyFavoriteExams();
+  loadMyMassResults();
+}
+
+// ─── PAYWALL ──────────────────────────────────
+let paywallExamId = null;
+let unlockedPapers = new Set();
+
+function openPaywall(examId) {
+  paywallExamId = examId;
   const papers = examPapers.length ? examPapers : demoExams;
-  grid.innerHTML = papers.map(e => examCardHTML(e)).join('');
+  const exam = papers.find(e => e.id === examId);
+  if (!exam) return;
+  document.getElementById('paywallTitle').textContent = exam.title;
+  document.getElementById('paywallDesc').textContent = `Unlock all ${exam.qCount} questions to practice the full paper.`;
+  document.getElementById('paywallPrice').innerHTML = `₹${exam.price} <span>one-time</span>`;
+  document.getElementById('paywallTotal').textContent = exam.qCount;
+  document.getElementById('paywallPriceBtn').textContent = exam.price;
+  document.getElementById('paywallFreeN').textContent = exam.freeCount || 0;
+  document.getElementById('paywallFreeBtn').style.display = (exam.freeCount > 0) ? 'flex' : 'none';
+  document.getElementById('paywallModal').style.display = 'flex';
+}
+
+function proceedPayment() {
+  showToast('💳 Payment integration coming soon. Using demo unlock.');
+  unlockedPapers.add(paywallExamId);
+  document.getElementById('paywallModal').style.display = 'none';
+  openExamStart(paywallExamId, false);
+}
+
+function startFreePreview() {
+  document.getElementById('paywallModal').style.display = 'none';
+  openExamStart(paywallExamId, true);
 }
 
 // ─── EXAM FLOW ────────────────────────────────
-function openExamStart(examId) {
-  if (!currentUser && auth) {
-    openAuth();
-    return;
-  }
+function openExamStart(examId, freePreviewOnly) {
+  if (!currentUser && auth) { openAuth(); return; }
   showPage('exams');
   const papers = examPapers.length ? examPapers : demoExams;
   const exam = papers.find(e => e.id === examId);
   if (!exam) return;
-  loadExam(exam);
+
+  const isLocked = exam.isLocked && (exam.price || 0) > 0 && !unlockedPapers.has(examId) && !isAdmin;
+  if (isLocked && !freePreviewOnly) { openPaywall(examId); return; }
+  loadExam(exam, freePreviewOnly);
 }
 
-async function loadExam(exam) {
+async function loadExam(exam, freePreviewOnly) {
   currentExam = exam;
   userAnswers = {};
   currentQIdx = 0;
   examStartTime = new Date();
 
-  // Try to load from Firestore, else use built-in KFC data
   let questions = [];
   if (db) {
     try {
@@ -959,20 +2180,32 @@ async function loadExam(exam) {
   }
   if (!questions.length) questions = getBuiltInQuestions(exam.id);
 
-  currentExam.questions = questions;
+  // Separate free (unlocked) and locked questions
+  const freeQs = questions.filter(q => !q.locked);
+  const lockedQs = questions.filter(q => q.locked);
 
-  // Show lang toggle if has Malayalam
-  const hasML = questions.some(q => q.question_ml);
+  // Free preview: only show free questions; full access: free first, then locked
+  if (freePreviewOnly) {
+    currentExam.questions = freeQs.length ? freeQs : questions.slice(0, exam.freeCount || 10);
+    currentExam._isPreview = true;
+  } else {
+    // Show free questions first, then locked ones
+    currentExam.questions = [...freeQs, ...lockedQs];
+    currentExam._isPreview = false;
+  }
+
+  const hasML = currentExam.questions.some(q => q.question_ml && q.question_ml.trim());
   document.getElementById('langToggle').style.display = hasML ? 'flex' : 'none';
 
   document.getElementById('examList').style.display = 'none';
   document.getElementById('examTaking').style.display = 'block';
   document.getElementById('examResult').style.display = 'none';
 
-  document.getElementById('examTitleDisplay').textContent = exam.title;
-  document.getElementById('examMetaDisplay').textContent = `${questions.length} Questions · ${exam.duration} min · 1 mark / -0.33`;
+  const previewNote = freePreviewOnly ? ` (Free Preview – ${currentExam.questions.length} questions)` : '';
+  document.getElementById('examTitleDisplay').textContent = exam.title + previewNote;
+  document.getElementById('examMetaDisplay').textContent = `${currentExam.questions.length} Questions · ${exam.duration} min · 1 mark / -0.33`;
 
-  buildPalette(questions.length);
+  buildPalette(currentExam.questions.length);
   startTimer(exam.duration * 60);
   renderQuestion(0);
 }
@@ -990,17 +2223,30 @@ function renderQuestion(idx) {
   document.getElementById('qNum').textContent = `QUESTION ${idx+1} OF ${currentExam.questions.length}`;
 
   const showML = currentLang === 'ml' && q.question_ml;
-  document.getElementById('qText').textContent = q.question_en;
+  // Show question text: if ML mode and ML text exists, show ML; else EN
+  document.getElementById('qText').textContent = showML ? q.question_ml : (q.question_en || q.question || '');
   const mlEl = document.getElementById('qTextML');
-  if (showML) { mlEl.textContent = q.question_ml; mlEl.style.display = 'block'; }
-  else { mlEl.style.display = 'none'; }
+  if (showML && q.question_en) {
+    // Show EN as sub-text when ML is primary
+    mlEl.textContent = q.question_en;
+    mlEl.style.display = 'block';
+  } else if (!showML && q.question_ml) {
+    // Show ML as sub-text when EN is primary
+    mlEl.textContent = q.question_ml;
+    mlEl.style.display = 'block';
+  } else {
+    mlEl.style.display = 'none';
+  }
 
   const opts = ['A','B','C','D'];
   const optKeys = ['option_a','option_b','option_c','option_d'];
+  // Use ML options if available and ML mode; else fall back to EN options
+  const mlOptKeys = ['option_a_ml','option_b_ml','option_c_ml','option_d_ml'];
   const selected = userAnswers[idx];
 
   document.getElementById('optionList').innerHTML = opts.map((letter, i) => {
-    const text = q[optKeys[i]] || '';
+    const hasMLOpt = q[mlOptKeys[i]];
+    const text = (showML && hasMLOpt) ? q[mlOptKeys[i]] : (q[optKeys[i]] || '');
     const isSelected = selected === letter;
     return `<button class="option-btn ${isSelected?'selected':''}" onclick="selectOption(${idx},'${letter}')">
       <div class="option-letter">${letter}</div>
@@ -1200,6 +2446,8 @@ function showAdminPanel(panel) {
   if (panel === 'users') loadUsers();
   if (panel === 'results') loadResults();
   if (panel === 'papers') loadPapers();
+  if (panel === 'categories') loadCategoryManager();
+  if (panel === 'massexam') { populateMePaperSelect(); loadMeAdminTable(); fetchNextKde(); }
 }
 
 async function loadAdminData() {
@@ -1254,31 +2502,268 @@ async function loadResults() {
 
 async function loadPapers() {
   const papers = examPapers.length ? examPapers : demoExams;
-  document.getElementById('papersTable').innerHTML = papers.map(p =>
-    `<tr><td>${p.title}</td><td>${p.category}</td><td>${p.year}</td><td>${p.qCount||p.questions?.length||'—'}</td><td>${p.addedAt||'—'}</td><td><button class="btn btn-sm btn-outline" onclick="deleteExam('${p.id}')"><i class="fas fa-trash"></i></button></td></tr>`
-  ).join('');
+  document.getElementById('papersTable').innerHTML = papers.map(p => {
+    const lockBadge = p.isLocked && p.price > 0
+      ? `<span class="badge badge-lock"><i class="fas fa-lock" style="font-size:9px"></i> ₹${p.price}</span>`
+      : `<span class="badge badge-free"><i class="fas fa-unlock" style="font-size:9px"></i> Free</span>`;
+    return `<tr>
+      <td>${p.title}</td>
+      <td>${p.category}</td>
+      <td>${[p.month, p.year].filter(Boolean).join(' – ')}</td>
+      <td>${p.qCount||p.questions?.length||'—'}</td>
+      <td>${lockBadge} ${p.freeCount>0?`<span style="font-size:11px;color:#888">${p.freeCount} free</span>`:''}</td>
+      <td>${p.addedAt||'—'}</td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-sm btn-primary" onclick="openEditPaper('${p.id}')"><i class="fas fa-edit"></i> Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteExam('${p.id}')"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
-// CSV Upload
-function handleCSV(input) {
+// ─── EDIT PAPER ─────────────────────────────────
+let editingPaperId = null;
+let editingQuestions = [];
+
+async function openEditPaper(paperId) {
+  editingPaperId = paperId;
+  editingQuestions = [];
+  document.getElementById('editModal').style.display = 'flex';
+  document.getElementById('editQList').innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;">Loading questions…</td></tr>';
+
+  // Populate paper metadata from local cache or demoExams
+  const papers = examPapers.length ? examPapers : demoExams;
+  const paper = papers.find(x => x.id === paperId) || {};
+
+  // 1. Main Category
+  const mainCatSel = document.getElementById('editMainCat');
+  const mainVal = paper.mainCategory || paper.category || '';
+  mainCatSel.selectedIndex = 0;
+  for (let i = 0; i < mainCatSel.options.length; i++) {
+    if (mainCatSel.options[i].text === mainVal || mainCatSel.options[i].value === mainVal) {
+      mainCatSel.selectedIndex = i; break;
+    }
+  }
+
+  // 2. Sub-category (load options then preselect)
+  await loadSubCats('editMainCat', 'editSubCat', paper.category !== paper.mainCategory ? paper.category : '');
+
+  // 3. Numeric fields
+  document.getElementById('editDuration').value = paper.duration || '';
+  document.getElementById('editPrice').value = paper.price !== undefined ? paper.price : 0;
+
+  // 4. Also try to load from Firestore if paper was uploaded
+  if (db) {
+    try {
+      const paperDoc = await db.collection('papers').doc(paperId).get();
+      if (paperDoc.exists) {
+        const d = paperDoc.data();
+        // Refresh main cat
+        const mv = d.mainCategory || d.category || '';
+        mainCatSel.selectedIndex = 0;
+        for (let i = 0; i < mainCatSel.options.length; i++) {
+          if (mainCatSel.options[i].text === mv || mainCatSel.options[i].value === mv) {
+            mainCatSel.selectedIndex = i; break;
+          }
+        }
+        await loadSubCats('editMainCat', 'editSubCat', d.category !== d.mainCategory ? d.category : '');
+        document.getElementById('editDuration').value = d.duration || '';
+        document.getElementById('editPrice').value = d.price !== undefined ? d.price : 0;
+      }
+      const snap = await db.collection('papers').doc(paperId).collection('questions').orderBy('q_no').get();
+      editingQuestions = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    } catch(e) { showToast('Note: ' + e.message); }
+  }
+  if (!editingQuestions.length) {
+    editingQuestions = paper.id ? getBuiltInQuestions(paperId).map((q,i) => ({ _docId: 'q'+(i+1), ...q })) : [];
+  }
+  renderEditTable();
+}
+
+function renderEditTable() {
+  const tbody = document.getElementById('editQList');
+  if (!editingQuestions.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="color:#aaa;text-align:center;padding:20px;">No questions found.</td></tr>';
+    document.getElementById('editQCount').value = 0;
+    return;
+  }
+  document.getElementById('editQCount').value = editingQuestions.length;
+  tbody.innerHTML = editingQuestions.map((q, i) => `
+    <tr id="erow-${i}">
+      <td style="font-weight:700;color:var(--kerala-dark);text-align:center;">${q.q_no||i+1}</td>
+      <td><textarea class="edit-cell" rows="3" style="width:100%;min-width:300px;" onchange="editingQuestions[${i}].question_en=this.value">${esc(q.question_en||q.question||'')}</textarea></td>
+      <td><textarea class="edit-cell" rows="3" onchange="editingQuestions[${i}].option_a=this.value">${esc(q.option_a||'')}</textarea></td>
+      <td><textarea class="edit-cell" rows="3" onchange="editingQuestions[${i}].option_b=this.value">${esc(q.option_b||'')}</textarea></td>
+      <td><textarea class="edit-cell" rows="3" onchange="editingQuestions[${i}].option_c=this.value">${esc(q.option_c||'')}</textarea></td>
+      <td><textarea class="edit-cell" rows="3" onchange="editingQuestions[${i}].option_d=this.value">${esc(q.option_d||'')}</textarea></td>
+      <td style="text-align:center;">
+        <select class="edit-cell" style="text-align:center;" onchange="editingQuestions[${i}].answer=this.value">
+          ${['A','B','C','D'].map(l=>`<option ${(q.answer||'').toUpperCase()===l?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </td>
+      <td style="text-align:center;"><button class="btn btn-sm btn-danger" onclick="deleteEditRow(${i})" title="Delete question"><i class="fas fa-trash"></i></button></td>
+    </tr>
+  `).join('');
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function deleteEditRow(i) {
+  if (!confirm('Delete this question?')) return;
+  editingQuestions.splice(i, 1);
+  renderEditTable();
+}
+
+async function saveEditedPaper() {
+  if (!db) { showToast('Firebase not configured!'); return; }
+  const btn = document.getElementById('saveEditBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  try {
+    // Collect updated metadata
+    const mainCat = document.getElementById('editMainCat').value;
+    const subCat = document.getElementById('editSubCat').value;
+    const category = subCat ? subCat : mainCat;
+    const mainCategory = mainCat;
+    const duration = parseInt(document.getElementById('editDuration').value) || 90;
+    const price = parseFloat(document.getElementById('editPrice').value) || 0;
+    const qCount = editingQuestions.length;
+    const lockedCount = editingQuestions.filter(q => q.locked).length;
+
+    // Save metadata
+    const title = [mainCat, subCat].filter(Boolean).join(' – ');
+    await db.collection('papers').doc(editingPaperId).update({
+      title, category, mainCategory, duration, price,
+      qCount, lockedCount, isLocked: lockedCount > 0
+    });
+
+    // Rewrite questions
+    const batch = db.batch();
+    const existing = await db.collection('papers').doc(editingPaperId).collection('questions').get();
+    existing.docs.forEach(d => batch.delete(d.ref));
+    editingQuestions.forEach((q, i) => {
+      const ref = db.collection('papers').doc(editingPaperId).collection('questions').doc(q._docId || `q${i+1}`);
+      const { _docId, ...data } = q;
+      batch.set(ref, { ...data, q_no: q.q_no||i+1, answer: (q.answer||'A').toUpperCase() });
+    });
+    await batch.commit();
+
+    // Update local cache
+    const papers = examPapers.length ? examPapers : demoExams;
+    const local = papers.find(p => p.id === editingPaperId);
+    if (local) Object.assign(local, { title, category, mainCategory, duration, price, qCount, lockedCount, isLocked: lockedCount > 0 });
+
+    showToast('✅ Paper saved successfully!');
+    document.getElementById('editModal').style.display = 'none';
+    loadPapers();
+  } catch(e) { showToast('Save failed: ' + e.message); }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save All Changes';
+}
+
+// CSV Upload – dual language
+let parsedCSV_EN = [];
+let parsedCSV_ML = [];
+
+function handleCSV(input, lang) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const text = e.target.result;
-    parsedCSV = parseCSV(text);
-    if (!parsedCSV.length) { showToast('Invalid CSV format.'); return; }
-    document.getElementById('csvSummary').textContent = `✅ Parsed ${parsedCSV.length} questions successfully!`;
-    const tbody = document.getElementById('csvPreviewTable');
-    tbody.innerHTML = parsedCSV.slice(0,5).map(q =>
-      `<tr><td>${q.q_no}</td><td>${String(q.question_en).substring(0,40)}…</td><td>${q.option_a?.substring(0,20)||''}</td><td>${q.option_b?.substring(0,20)||''}</td><td>${q.option_c?.substring(0,20)||''}</td><td>${q.option_d?.substring(0,20)||''}</td><td><strong>${q.answer}</strong></td></tr>`
-    ).join('');
-    document.getElementById('csvPreview').style.display = 'block';
+    let text = e.target.result;
+    // Strip UTF-8 BOM if present
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const parsed = parseCSV(text, lang);
+    if (!parsed.length) { showToast('Invalid CSV format.'); return; }
+    if (lang === 'en') {
+      parsedCSV_EN = parsed;
+      document.getElementById('enFileLabel').textContent = `✅ ${parsed.length} questions loaded`;
+      document.getElementById('dropZoneEN').style.borderColor = 'var(--kerala-green)';
+    } else {
+      parsedCSV_ML = parsed;
+      document.getElementById('mlFileLabel').textContent = `✅ ${parsed.length} questions loaded`;
+      document.getElementById('dropZoneML').style.borderColor = 'var(--kerala-green)';
+    }
+    updateMergedPreview();
   };
-  reader.readAsText(file);
+  reader.readAsText(file, 'UTF-8');
 }
 
-function parseCSV(text) {
+function getMergedCSV() {
+  // Merge EN and ML by q_no; EN is base, ML patches question_ml and optionally options
+  const base = parsedCSV_EN.length ? parsedCSV_EN : parsedCSV_ML;
+  if (!parsedCSV_EN.length || !parsedCSV_ML.length) return base;
+  const mlMap = {};
+  parsedCSV_ML.forEach(q => { mlMap[q.q_no] = q; });
+  return parsedCSV_EN.map(q => {
+    const ml = mlMap[q.q_no] || {};
+    return { ...q, question_ml: ml.question_ml || ml.question || '' };
+  });
+}
+
+function updateMergedPreview() {
+  parsedCSV = getMergedCSV();
+  if (!parsedCSV.length) return;
+
+  // Init lock state: all unlocked by default (admin sets locks via toggle)
+  parsedCSV.forEach((q) => {
+    if (q._locked === undefined) q._locked = false;
+  });
+
+  const hasML = parsedCSV.some(q => q.question_ml && q.question_ml.trim());
+  document.getElementById('mlColHead').style.display = hasML ? '' : 'none';
+  document.getElementById('csvSummary').textContent = `✅ Merged ${parsedCSV.length} questions (EN: ${parsedCSV_EN.length}, ML: ${parsedCSV_ML.length})`;
+
+  renderPreviewTable();
+  document.getElementById('csvPreview').style.display = 'block';
+}
+
+function renderPreviewTable() {
+  const hasML = parsedCSV.some(q => q.question_ml && q.question_ml.trim());
+  const free = parsedCSV.filter(q => !q._locked).length;
+  const locked = parsedCSV.filter(q => q._locked).length;
+  document.getElementById('freeCount').textContent = free;
+  document.getElementById('lockedCount').textContent = locked;
+  // Auto-set the Free Preview Questions field to number of unlocked questions
+  document.getElementById('uploadFreeCount').value = free;
+
+  // Sort: unlocked first, then locked
+  const sorted = [...parsedCSV.map((q,i)=>({...q,_origIdx:i}))].sort((a,b) => (a._locked?1:0)-(b._locked?1:0));
+
+  const tbody = document.getElementById('csvPreviewTable');
+  tbody.innerHTML = sorted.map((q) => {
+    const i = q._origIdx;
+    const mlCell = hasML ? `<td style="font-family:'Noto Sans Malayalam',sans-serif;font-size:11px;color:#555;">${(q.question_ml||'—').substring(0,30)}</td>` : '';
+    const rowCls = q._locked ? 'preview-row-locked' : '';
+    return `<tr class="${rowCls}">
+      <td style="font-weight:700;color:${q._locked?'#E65100':'var(--kerala-dark)'}">
+        ${q._locked ? '<i class="fas fa-lock" style="font-size:10px;margin-right:3px;"></i>' : '<i class="fas fa-unlock" style="font-size:10px;margin-right:3px;color:var(--kerala-green)"></i>'}${q.q_no||i+1}
+      </td>
+      <td>${String(q.question_en||q.question||'').substring(0,40)}${String(q.question_en||q.question||'').length>40?'…':''}</td>
+      ${mlCell}
+      <td>${(q.option_a||'').substring(0,15)}</td>
+      <td>${(q.option_b||'').substring(0,15)}</td>
+      <td>${(q.option_c||'').substring(0,15)}</td>
+      <td>${(q.option_d||'').substring(0,15)}</td>
+      <td><strong>${q.answer||''}</strong></td>
+      <td>
+        <button class="lock-btn ${q._locked?'locked':'unlocked'}" onclick="toggleLockQ(${i})" title="${q._locked?'Click to unlock':'Click to lock'}">
+          <i class="fas fa-${q._locked?'lock':'unlock'}"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleLockQ(i) {
+  parsedCSV[i]._locked = !parsedCSV[i]._locked;
+  renderPreviewTable();
+}
+
+function setAllLock(locked) {
+  parsedCSV.forEach(q => q._locked = locked);
+  renderPreviewTable();
+}
+
+function parseCSV(text, lang) {
   const lines = text.trim().split('\n');
   if (!lines.length) return [];
   const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
@@ -1286,8 +2771,11 @@ function parseCSV(text) {
     const vals = parseCSVLine(line);
     const obj = {};
     headers.forEach((h,i) => obj[h] = (vals[i]||'').trim().replace(/^"|"$/g,''));
+    // Normalise: if lang=ml and there's a 'question' col without _ml suffix, remap
+    if (lang === 'ml' && obj.question && !obj.question_ml) obj.question_ml = obj.question;
+    if (lang === 'en' && obj.question && !obj.question_en) obj.question_en = obj.question;
     return obj;
-  }).filter(q => q.question_en || q.question);
+  }).filter(q => q.question_en || q.question_ml || q.question);
 }
 
 function parseCSVLine(line) {
@@ -1301,38 +2789,72 @@ function parseCSVLine(line) {
 }
 
 async function uploadCSVToFirebase() {
-  if (!parsedCSV.length) return;
+  parsedCSV = getMergedCSV();
+  if (!parsedCSV.length) { showToast('Please upload at least one CSV file first.'); return; }
   if (!db) { showToast('Firebase not configured!'); return; }
   const paperId = 'paper_' + Date.now();
-  const title = document.getElementById('uploadTitle').value;
-  const category = document.getElementById('uploadCategory').value;
-  const year = document.getElementById('uploadYear').value;
+  const mainCat = document.getElementById('uploadMainCat').value;
+  const subCat = document.getElementById('uploadSubCat').value;
+  if (!mainCat) { showToast('Please select a Main Category.'); return; }
+  const category = subCat ? subCat : mainCat;
+  const mainCategory = mainCat;
   const duration = document.getElementById('uploadDuration').value;
+  const price = parseFloat(document.getElementById('uploadPrice').value) || 0;
+  const freeCount = parsedCSV.filter(q => !q._locked).length;
+  const lockedCount = parsedCSV.filter(q => q._locked).length;
 
-  const paperMeta = { id: paperId, title, category, year: parseInt(year), duration: parseInt(duration), qCount: parsedCSV.length, hasML: parsedCSV.some(q=>q.question_ml), addedAt: new Date().toLocaleDateString() };
+  const autoTitle = [mainCat, subCat].filter(Boolean).join(' – ');
+  const paperMeta = {
+    id: paperId, title: autoTitle, category, mainCategory, duration: parseInt(duration),
+    qCount: parsedCSV.length, hasML: parsedCSV.some(q=>q.question_ml && q.question_ml.trim()),
+    price, freeCount, lockedCount, isLocked: lockedCount > 0,
+    addedAt: new Date().toLocaleDateString()
+  };
   try {
     await db.collection('papers').doc(paperId).set(paperMeta);
     const batch = db.batch();
     parsedCSV.forEach((q, i) => {
       const ref = db.collection('papers').doc(paperId).collection('questions').doc(`q${i+1}`);
-      batch.set(ref, { q_no: q.q_no||i+1, question_en: q.question_en||q.question||'', question_ml: q.question_ml||'', option_a: q.option_a||'', option_b: q.option_b||'', option_c: q.option_c||'', option_d: q.option_d||'', answer: (q.answer||'').toUpperCase() });
+      const { _locked, _origIdx, ...rest } = q;
+      batch.set(ref, {
+        q_no: q.q_no||i+1,
+        question_en: q.question_en||q.question||'',
+        question_ml: q.question_ml||'',
+        option_a: q.option_a||'', option_b: q.option_b||'',
+        option_c: q.option_c||'', option_d: q.option_d||'',
+        answer: (q.answer||'').toUpperCase(),
+        locked: q._locked || false
+      });
     });
     await batch.commit();
     examPapers.push(paperMeta);
     showToast('✅ Questions uploaded successfully!');
     document.getElementById('csvPreview').style.display = 'none';
-    parsedCSV = [];
+    parsedCSV = []; parsedCSV_EN = []; parsedCSV_ML = [];
+    document.getElementById('enFileLabel').textContent = '';
+    document.getElementById('mlFileLabel').textContent = '';
+    document.getElementById('dropZoneEN').style.borderColor = '';
+    document.getElementById('dropZoneML').style.borderColor = '';
   } catch(e) { showToast('Upload failed: ' + e.message); }
 }
 
-function downloadSampleCSV() {
-  const headers = 'q_no,question_en,question_ml,option_a,option_b,option_c,option_d,answer';
-  const sample = `1,"What is the primary function of PAC?","PAC ന്‍റെ പ്രാഥമിക ധർമ്മം?","Examine Audit Reports","Pass Budget","Prepare Budget","Review Policy",A
-2,"Who administers the Contingency Fund?","ആകസ്‌മിക ഫണ്ട്‌ ആർ നിയന്ത്രിക്കുന്നു?","Governor","Finance Department","Finance Minister","Director Treasuries",B`;
+function downloadSampleCSV(lang) {
+  let headers, sample, filename;
+  if (lang === 'ml') {
+    headers = 'q_no,question_ml,option_a,option_b,option_c,option_d,answer';
+    sample = `1,"PAC ന്‍റെ പ്രാഥമിക ധർമ്മം?","ഓഡിറ്റ് റിപ്പോർട്ട് പരിശോധിക്കുക","ബജറ്റ് പാസ്സാക്കുക","ബജറ്റ് തയ്യാറാക്കുക","നയം അവലോകനം ചെയ്യുക",A
+2,"ആകസ്‌മിക ഫണ്ട്‌ ആർ നിയന്ത്രിക്കുന്നു?","ഗവർണർ","ധനകാര്യ വകുപ്പ്","ധനമന്ത്രി","ട്രഷറി ഡയറക്ടർ",B`;
+    filename = 'sample_questions_ml.csv';
+  } else {
+    headers = 'q_no,question_en,option_a,option_b,option_c,option_d,answer';
+    sample = `1,"What is the primary function of PAC?","Examine Audit Reports","Pass Budget","Prepare Budget","Review Policy",A
+2,"Who administers the Contingency Fund?","Governor","Finance Department","Finance Minister","Director Treasuries",B`;
+    filename = 'sample_questions_en.csv';
+  }
   const blob = new Blob([headers+'\n'+sample], {type:'text/csv'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'sample_questions.csv';
+  a.download = filename;
   a.click();
 }
 
@@ -1342,6 +2864,986 @@ async function deleteExam(id) {
   examPapers = examPapers.filter(e => e.id !== id);
   loadPapers();
   showToast('Paper deleted');
+}
+
+// ─── CATEGORY MANAGER ─────────────────────────
+// In-memory cache: { 'Account Test': ['KFC Part I', 'KSR', ...], ... }
+let subCatCache = {};
+
+async function loadSubCatCache() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('subcategories').get();
+    subCatCache = {};
+    snap.docs.forEach(d => { subCatCache[d.id] = d.data().list || []; });
+  } catch(e) { subCatCache = {}; }
+}
+
+async function loadSubCats(mainSelectId, subSelectId, preselect) {
+  const mainCat = document.getElementById(mainSelectId).value;
+  const subSel = document.getElementById(subSelectId);
+  subSel.innerHTML = '<option value="">— No Sub-category —</option>';
+  if (!mainCat) { subSel.disabled = true; return; }
+
+  // Load from cache or Firestore
+  let list = subCatCache[mainCat];
+  if (!list && db) {
+    try {
+      const snap = await db.collection('subcategories').doc(mainCat).get();
+      list = snap.exists ? (snap.data().list || []) : [];
+      subCatCache[mainCat] = list;
+    } catch(e) { list = []; }
+  }
+  list = list || [];
+
+  if (list.length === 0) {
+    subSel.innerHTML = '<option value="">— No sub-categories yet —</option>';
+    const hint = document.getElementById(subSelectId === 'uploadSubCat' ? 'uploadSubCatHint' : '');
+    if (hint) hint.style.display = 'block';
+  } else {
+    subSel.innerHTML = '<option value="">— Select Sub-category (optional) —</option>' +
+      list.map(s => `<option value="${s}" ${s === preselect ? 'selected' : ''}>${s}</option>`).join('');
+    const hint = document.getElementById(subSelectId === 'uploadSubCat' ? 'uploadSubCatHint' : '');
+    if (hint) hint.style.display = 'none';
+  }
+  subSel.disabled = false;
+}
+
+let activeCatManagerMain = null;
+
+// Editable main categories (starts from MAIN_CATEGORIES, can be modified at runtime)
+let editableMainCategories = [...MAIN_CATEGORIES];
+
+function loadCategoryManager() {
+  const listEl = document.getElementById('catManagerList');
+  const items = editableMainCategories.map((cat, idx) => {
+    const num = idx + 1;
+    const icon = CATEGORY_ICONS[cat] || '📄';
+    const esc = cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="cat-list-item ${activeCatManagerMain === cat ? 'active' : ''}" onclick="selectCatManager('${esc}')">
+      <span class="cat-num">${num}.</span>
+      <span style="font-size:15px;">${icon}</span>
+      <span style="flex:1;">${cat}</span>
+      <span style="font-size:11px;color:#bbb;">${(subCatCache[cat]||[]).length > 0 ? (subCatCache[cat].length) + ' sub' : ''}</span>
+      <button class="cat-edit-btn edit" onclick="event.stopPropagation();editMainCat(${idx})" title="Rename"><i class="fas fa-pencil-alt"></i></button>
+      <button class="cat-edit-btn del" onclick="event.stopPropagation();deleteMainCat(${idx})" title="Delete"><i class="fas fa-trash"></i></button>
+    </div>`;
+  }).join('');
+  listEl.innerHTML = `<div class="cat-list-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <span><i class="fas fa-layer-group" style="margin-right:6px;"></i> Main Categories</span>
+    <span style="font-size:11px;opacity:.7;">${editableMainCategories.length} total</span>
+  </div>
+  ${items}
+  <div class="add-main-cat-row">
+    <input id="newMainCatInput" placeholder="New category name…" onkeydown="if(event.key==='Enter') addMainCat()">
+    <button class="btn btn-primary btn-sm" onclick="addMainCat()"><i class="fas fa-plus"></i> Add</button>
+  </div>`;
+  if (activeCatManagerMain) renderSubcatPanel(activeCatManagerMain);
+}
+
+function addMainCat() {
+  const input = document.getElementById('newMainCatInput');
+  const val = (input.value || '').trim();
+  if (!val) { showToast('Please enter a category name.'); return; }
+  if (editableMainCategories.includes(val)) { showToast('Category already exists.'); return; }
+  editableMainCategories.push(val);
+  subCatCache[val] = [];
+  input.value = '';
+  loadCategoryManager();
+  showToast('✅ "' + val + '" added as main category.');
+}
+
+function editMainCat(idx) {
+  const oldName = editableMainCategories[idx];
+  const newName = prompt('Rename category:', oldName);
+  if (!newName || newName.trim() === oldName) return;
+  const trimmed = newName.trim();
+  if (editableMainCategories.includes(trimmed)) { showToast('Name already exists.'); return; }
+  editableMainCategories[idx] = trimmed;
+  if (subCatCache[oldName]) { subCatCache[trimmed] = subCatCache[oldName]; delete subCatCache[oldName]; }
+  if (activeCatManagerMain === oldName) activeCatManagerMain = trimmed;
+  loadCategoryManager();
+  showToast('✅ Renamed to "' + trimmed + '"');
+}
+
+function deleteMainCat(idx) {
+  const cat = editableMainCategories[idx];
+  if (!confirm('Delete "' + cat + '"? All its sub-categories will also be removed.')) return;
+  editableMainCategories.splice(idx, 1);
+  delete subCatCache[cat];
+  if (activeCatManagerMain === cat) { activeCatManagerMain = null; document.getElementById('subcatPanel').innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:30px 0;">← Select a main category</div>'; }
+  loadCategoryManager();
+  showToast('Deleted "' + cat + '"');
+}
+
+async function selectCatManager(cat) {
+  activeCatManagerMain = cat;
+  // Ensure sub-cat list is loaded
+  if (!subCatCache[cat] && db) {
+    try {
+      const snap = await db.collection('subcategories').doc(cat).get();
+      subCatCache[cat] = snap.exists ? (snap.data().list || []) : [];
+    } catch(e) { subCatCache[cat] = []; }
+  }
+  loadCategoryManager();
+}
+
+function renderSubcatPanel(cat) {
+  const panel = document.getElementById('subcatPanel');
+  const list = subCatCache[cat] || [];
+  const icon = CATEGORY_ICONS[cat] || '📄';
+  const tags = list.length
+    ? list.map((s, i) => {
+        const ec = cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return `<span class="subcat-tag">
+          <span onclick="editSubCatInline('${ec}',${i})" title="Click to rename" style="cursor:pointer;">${s}</span>
+          <button onclick="editSubCatInline('${ec}',${i})" title="Rename" style="color:#888;font-size:11px;padding:0 3px;"><i class="fas fa-pencil-alt"></i></button>
+          <button onclick="removeSubCat('${ec}',${i})" title="Remove">×</button>
+        </span>`;
+      }).join('')
+    : `<p style="color:#aaa;font-size:13px;margin:8px 0;">No sub-categories yet. Add one below.</p>`;
+
+  // Compute bundle price info
+  const papers = examPapers.length ? examPapers : demoExams;
+  const catPapers = papers.filter(p => (p.mainCategory || p.category) === cat && (p.price || 0) > 0);
+  const totalIndividual = catPapers.reduce((s, p) => s + (p.price || 0), 0);
+  const bundleRaw = totalIndividual * 0.9;
+  const bundlePrice = bundleRaw > 0 ? Math.ceil(bundleRaw / 10) * 10 : 0;
+  const savings = totalIndividual - bundlePrice;
+
+  const priceSectionHTML = catPapers.length > 0 ? `
+    <div class="cat-price-section">
+      <div class="price-label"><i class="fas fa-tags" style="color:#C8A96E;"></i> Category Bundle Price</div>
+      <div class="cat-price-row">
+        <div class="cat-price-display">₹${bundlePrice}</div>
+        <div class="cat-price-breakdown">
+          <div><strong>${catPapers.length}</strong> paid paper${catPapers.length!==1?'s':''} in category</div>
+          <div>Individual total: <strong>₹${totalIndividual}</strong></div>
+          <div>Discount: 10% → Save <strong>₹${savings}</strong></div>
+          <div style="font-size:10px;color:#aaa;">(90% of total, rounded to next ₹10)</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-gold btn-sm" onclick="openBundlePaywall('${cat.replace(/'/g,"\\'")}')">
+          <i class="fas fa-shopping-cart"></i> Buy Bundle – ₹${bundlePrice}
+        </button>
+        <span style="font-size:11px;color:#888;"><i class="fas fa-calendar-alt"></i> Unlocks all ${catPapers.length} papers for 1 year</span>
+      </div>
+    </div>` : `
+    <div class="cat-price-section" style="background:#F8F9FF;border-color:var(--border);">
+      <div class="price-label" style="color:#aaa;"><i class="fas fa-tags"></i> Category Bundle</div>
+      <div style="font-size:12px;color:#aaa;">No paid papers in this category yet. Set prices on individual papers to enable bundle pricing.</div>
+    </div>`;
+
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:14px;border-bottom:1.5px solid var(--border);">
+      <span style="font-size:24px;">${icon}</span>
+      <div>
+        <div style="font-size:16px;font-weight:800;color:var(--kerala-dark);">${cat}</div>
+        <div style="font-size:12px;color:#888;">${list.length} sub-categor${list.length !== 1 ? 'ies' : 'y'}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:14px;">${tags}</div>
+    <div class="subcat-add-row">
+      <input class="form-input" id="newSubCatInput" placeholder="e.g. Account Test (Higher) – KFC Part I" style="font-size:13px;"
+        onkeydown="if(event.key==='Enter') addSubCat('${cat.replace(/'/g,"\\'")}')">
+      <button class="btn btn-primary" onclick="addSubCat('${cat.replace(/'/g,"\\'")}')">
+        <i class="fas fa-plus"></i> Add
+      </button>
+    </div>
+    <p style="font-size:11px;color:#aaa;margin-top:8px;"><i class="fas fa-info-circle"></i> Sub-categories appear in Upload &amp; Edit dropdowns under this main category.</p>
+    ${priceSectionHTML}
+  `;
+}
+
+async function addSubCat(cat) {
+  const input = document.getElementById('newSubCatInput');
+  const val = input.value.trim();
+  if (!val) { showToast('Please enter a sub-category name.'); return; }
+  if (!subCatCache[cat]) subCatCache[cat] = [];
+  if (subCatCache[cat].includes(val)) { showToast('Sub-category already exists.'); return; }
+  subCatCache[cat].push(val);
+  input.value = '';
+  if (db) {
+    try {
+      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat] });
+    } catch(e) { showToast('Saved locally only – Firebase error: ' + e.message); }
+  }
+  loadCategoryManager();
+  showToast(`✅ "${val}" added to ${cat}`);
+}
+
+async function removeSubCat(cat, idx) {
+  if (!confirm('Remove this sub-category?')) return;
+  subCatCache[cat].splice(idx, 1);
+  if (db) {
+    try {
+      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat] });
+    } catch(e) {}
+  }
+  loadCategoryManager();
+  showToast('Sub-category removed.');
+}
+
+async function editSubCatInline(cat, idx) {
+  const oldVal = subCatCache[cat][idx];
+  const newVal = prompt('Rename sub-category:', oldVal);
+  if (!newVal || newVal.trim() === oldVal) return;
+  const trimmed = newVal.trim();
+  if (subCatCache[cat].includes(trimmed)) { showToast('Name already exists.'); return; }
+  subCatCache[cat][idx] = trimmed;
+  if (db) {
+    try {
+      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat] });
+    } catch(e) {}
+  }
+  loadCategoryManager();
+  showToast('✅ Renamed to "' + trimmed + '"');
+}
+
+// ─── CATEGORY BUNDLE PURCHASE ─────────────────
+let unlockedCategories = {}; // cat → expiry timestamp (ms)
+
+function getCategoryBundlePrice(cat) {
+  const papers = examPapers.length ? examPapers : demoExams;
+  const catPapers = papers.filter(p => (p.mainCategory || p.category) === cat && (p.price || 0) > 0);
+  const total = catPapers.reduce((s, p) => s + (p.price || 0), 0);
+  if (total === 0) return { price: 0, papers: catPapers, total: 0, savings: 0 };
+  const bundlePrice = Math.ceil(total * 0.9 / 10) * 10;
+  return { price: bundlePrice, papers: catPapers, total, savings: total - bundlePrice };
+}
+
+function openBundlePaywall(cat) {
+  const { price, papers, total, savings } = getCategoryBundlePrice(cat);
+  const icon = CATEGORY_ICONS[cat] || '📦';
+  document.getElementById('bundlePaywallTitle').textContent = icon + ' ' + cat + ' — Full Bundle';
+  document.getElementById('bundlePaywallDesc').textContent = `Unlock all question papers in "${cat}" for one full year.`;
+  document.getElementById('bundlePaywallPrice').innerHTML = `₹${price} <span>bundle / year</span>`;
+  document.getElementById('bundleCardCount').textContent = papers.length;
+  document.getElementById('bundleSavings').textContent = '₹' + savings;
+  document.getElementById('bundlePaywallPriceBtn').textContent = price;
+  document.getElementById('bundlePaywallModal').dataset.cat = cat;
+  document.getElementById('bundlePaywallModal').style.display = 'flex';
+}
+
+async function proceedBundlePayment() {
+  const cat = document.getElementById('bundlePaywallModal').dataset.cat;
+  const { papers } = getCategoryBundlePrice(cat);
+  showToast('💳 Payment integration coming soon. Using demo unlock.');
+
+  // Unlock category for 1 year
+  const expiry = Date.now() + 365 * 24 * 60 * 60 * 1000;
+  unlockedCategories[cat] = expiry;
+
+  // Also add all individual paper IDs to unlockedPapers
+  papers.forEach(p => unlockedPapers.add(p.id));
+
+  // Persist to Firestore if user is logged in
+  if (db && currentUser) {
+    try {
+      await db.collection('users').doc(currentUser.uid).collection('purchases').doc('bundle_' + cat).set({
+        category: cat, type: 'bundle', purchasedAt: new Date(), expiresAt: new Date(expiry),
+        papersUnlocked: papers.map(p => p.id)
+      });
+    } catch(e) {}
+  }
+
+  document.getElementById('bundlePaywallModal').style.display = 'none';
+  showToast(`✅ "${cat}" bundle unlocked for 1 year! All ${papers.length} papers are now accessible.`);
+  renderHomeGrid();
+}
+
+function isCategoryBundleActive(cat) {
+  return unlockedCategories[cat] && unlockedCategories[cat] > Date.now();
+}
+
+// Load user bundle purchases from Firestore on auth
+async function loadUserPurchases(uid) {
+  if (!db) return;
+  try {
+    const snap = await db.collection('users').doc(uid).collection('purchases').get();
+    snap.docs.forEach(doc => {
+      const d = doc.data();
+      const expiry = d.expiresAt ? d.expiresAt.toMillis() : 0;
+      if (d.type === 'bundle' && expiry > Date.now()) {
+        unlockedCategories[d.category] = expiry;
+        (d.papersUnlocked || []).forEach(id => unlockedPapers.add(id));
+      }
+    });
+  } catch(e) {}
+}
+
+// ─── MASS EXAM ────────────────────────────────
+// KDE numbering starts at KDE1000 and increments lifelong
+let massExams = []; // loaded from Firestore
+let currentMassExam = null;
+let meAnswers = {};
+let meQIdx = 0;
+let meTimerInterval = null;
+let meCountdownInterval = null;
+let meCountdownIntervals = {}; // per-card intervals
+
+// ── Helpers ──
+function formatDateTime(ts) {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
+}
+function fmtDuration(start, end) {
+  const s = start.toDate ? start.toDate() : new Date(start);
+  const e = end.toDate ? end.toDate() : new Date(end);
+  const mins = Math.round((e - s) / 60000);
+  return mins >= 60 ? `${Math.floor(mins/60)}h ${mins%60}m` : `${mins}m`;
+}
+function getMeStatus(me) {
+  const now = Date.now();
+  const start = me.startTime.toDate ? me.startTime.toDate().getTime() : new Date(me.startTime).getTime();
+  const end = me.endTime.toDate ? me.endTime.toDate().getTime() : new Date(me.endTime).getTime();
+  if (now < start) return 'upcoming';
+  if (now >= start && now <= end) return 'live';
+  return 'ended';
+}
+function maskName(name, isMe) {
+  if (isMe) return name + ' <span style="font-size:10px;background:var(--kerala-gold);color:var(--kerala-dark);padding:1px 6px;border-radius:10px;margin-left:4px;">You</span>';
+  if (!name || name.length <= 2) return name ? name[0] + '***' : '***';
+  return name[0] + '*'.repeat(Math.max(1, name.length - 2)) + name[name.length - 1];
+}
+function roundToNext10(n) { return Math.ceil(n / 10) * 10; }
+
+// ── Load and display mass exams ──
+async function loadMassExams() {
+  const grid = document.getElementById('meGrid');
+  if (!db) {
+    grid.innerHTML = '<div style="color:#aaa;text-align:center;padding:30px;grid-column:1/-1;">Demo mode – Firebase required for Mass Exams.</div>';
+    return;
+  }
+  grid.innerHTML = '<div style="color:#aaa;text-align:center;padding:30px;grid-column:1/-1;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+  try {
+    const snap = await db.collection('massExams').orderBy('startTime', 'desc').limit(20).get();
+    massExams = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderMeGrid();
+  } catch(e) {
+    grid.innerHTML = `<div style="color:#aaa;text-align:center;padding:30px;grid-column:1/-1;">Could not load: ${e.message}</div>`;
+  }
+}
+
+function renderMeGrid() {
+  const grid = document.getElementById('meGrid');
+  // Clear existing countdown intervals
+  Object.values(meCountdownIntervals).forEach(clearInterval);
+  meCountdownIntervals = {};
+
+  const visible = massExams.filter(me => getMeStatus(me) !== 'ended' || true); // show all
+  if (!visible.length) {
+    grid.innerHTML = '<div style="color:#aaa;font-size:14px;text-align:center;padding:40px;grid-column:1/-1;"><div style="font-size:36px;margin-bottom:10px;">📅</div>No mass exams yet. Check back soon!</div>';
+    return;
+  }
+  grid.innerHTML = visible.map(me => {
+    const status = getMeStatus(me);
+    const statusBadge = status === 'live'
+      ? '<span class="mass-exam-status status-live"><i class="fas fa-circle" style="font-size:8px"></i> LIVE NOW</span>'
+      : status === 'upcoming'
+        ? '<span class="mass-exam-status status-upcoming"><i class="fas fa-clock"></i> Upcoming</span>'
+        : '<span class="mass-exam-status status-ended"><i class="fas fa-check"></i> Ended</span>';
+    const fee = me.fee > 0 ? `₹${me.fee}` : 'Free';
+    const start = me.startTime ? (me.startTime.toDate ? me.startTime.toDate() : new Date(me.startTime)) : new Date();
+    const end = me.endTime ? (me.endTime.toDate ? me.endTime.toDate() : new Date(me.endTime)) : new Date();
+    const icon = CATEGORY_ICONS[me.category] || '📋';
+    const dur = Math.round((end - start) / 60000);
+    const btnLabel = status === 'ended' ? 'View Results' : (status === 'live' ? 'Join Now' : 'Register');
+    const btnClass = status === 'live' ? 'btn-primary' : (status === 'ended' ? 'btn-outline' : 'btn-gold');
+    return `<div class="mass-exam-card" id="mecard_${me.id}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
+        <span class="kde-badge">${me.kdeNo}</span>
+        ${statusBadge}
+      </div>
+      <div style="font-size:15px;font-weight:800;color:var(--kerala-dark);margin-bottom:4px;">${me.title}</div>
+      <div style="font-size:12px;color:#888;margin-bottom:12px;">${icon} ${me.category||''}${me.subCategory?' → '+me.subCategory:''}</div>
+      <div style="font-size:12px;color:#555;margin-bottom:8px;display:flex;flex-direction:column;gap:4px;">
+        <div><i class="fas fa-play-circle" style="color:var(--kerala-green);width:16px;"></i> ${start.toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</div>
+        <div><i class="fas fa-stop-circle" style="color:var(--kerala-red);width:16px;"></i> ${end.toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</div>
+        <div><i class="fas fa-clock" style="color:#888;width:16px;"></i> ${dur >= 60 ? Math.floor(dur/60)+'h '+dur%60+'m' : dur+'m'} · ${me.qCount||0} questions</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <span class="badge ${me.fee>0?'badge-gold':'badge-green'}" style="font-size:12px;">${me.fee>0?'₹'+me.fee+' Entry':'Free Entry'}</span>
+          <span class="badge badge-blue" style="font-size:12px;margin-left:4px;">${(me.participants||[]).length} Registered</span>
+        </div>
+        <button class="btn ${btnClass} btn-sm" onclick="openMassExam('${me.id}')">${btnLabel}</button>
+      </div>
+      ${status === 'upcoming' ? `<div style="margin-top:10px;"><div class="countdown-badge" id="cdBadge_${me.id}"><i class="fas fa-hourglass-half"></i> <span id="cd_${me.id}">…</span></div></div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Start countdown tickers for upcoming
+  visible.filter(me => getMeStatus(me) === 'upcoming').forEach(me => {
+    const start = me.startTime.toDate ? me.startTime.toDate() : new Date(me.startTime);
+    meCountdownIntervals[me.id] = setInterval(() => {
+      const diff = start - Date.now();
+      const el = document.getElementById('cd_' + me.id);
+      if (!el) { clearInterval(meCountdownIntervals[me.id]); return; }
+      if (diff <= 0) { el.textContent = 'Starting…'; clearInterval(meCountdownIntervals[me.id]); return; }
+      const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+      el.textContent = h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
+    }, 1000);
+  });
+}
+
+async function openMassExam(meId) {
+  if (!currentUser && auth) { openAuth(); return; }
+  const me = massExams.find(x => x.id === meId);
+  if (!me) return;
+  const status = getMeStatus(me);
+
+  if (status === 'ended') {
+    // Go to leaderboard
+    currentMassExam = me;
+    await showLeaderboard(me);
+    return;
+  }
+
+  currentMassExam = me;
+  showMePayModal(me);
+}
+
+function showMePayModal(me) {
+  const start = me.startTime.toDate ? me.startTime.toDate() : new Date(me.startTime);
+  const end = me.endTime.toDate ? me.endTime.toDate() : new Date(me.endTime);
+  document.getElementById('mePayKde').textContent = me.kdeNo;
+  document.getElementById('mePayTitle').textContent = me.title;
+  document.getElementById('mePayDesc').textContent = (me.category||'') + (me.subCategory?' → '+me.subCategory:'');
+  document.getElementById('mePayStart').textContent = start.toLocaleString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+  document.getElementById('mePayEnd').textContent = end.toLocaleString('en-IN',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:true});
+  document.getElementById('mePayQCount').textContent = me.qCount || '—';
+  document.getElementById('mePayRegCount').textContent = (me.participants||[]).length;
+
+  const alreadyJoined = (me.participants||[]).includes(currentUser?.uid);
+  if (alreadyJoined) {
+    // Already registered — go straight to waiting/taking
+    document.getElementById('mePayModal').style.display = 'none';
+    startMassExamFlow(me);
+    return;
+  }
+
+  if (me.fee > 0) {
+    document.getElementById('mePayFeeSection').style.display = 'block';
+    document.getElementById('mePayFreeSection').style.display = 'none';
+    document.getElementById('mePayFee').innerHTML = `₹${me.fee} <span>entry fee</span>`;
+  } else {
+    document.getElementById('mePayFeeSection').style.display = 'none';
+    document.getElementById('mePayFreeSection').style.display = 'block';
+  }
+  document.getElementById('mePayModal').style.display = 'flex';
+}
+
+async function meConfirmJoin() {
+  if (!currentUser) { openAuth(); return; }
+  const me = currentMassExam;
+  document.getElementById('mePayModal').style.display = 'none';
+  showToast(`💳 ${me.fee > 0 ? 'Payment integration coming soon. Demo joining...' : 'Registering...'}`);
+
+  // Register user in Firestore
+  if (db) {
+    try {
+      await db.collection('massExams').doc(me.id).update({
+        participants: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
+      if (!me.participants) me.participants = [];
+      if (!me.participants.includes(currentUser.uid)) me.participants.push(currentUser.uid);
+    } catch(e) { showToast('Registration failed: ' + e.message); return; }
+  }
+  showToast(`✅ Registered for ${me.kdeNo}!`);
+  startMassExamFlow(me);
+}
+
+function startMassExamFlow(me) {
+  const now = Date.now();
+  const start = me.startTime.toDate ? me.startTime.toDate().getTime() : new Date(me.startTime).getTime();
+  const end = me.endTime.toDate ? me.endTime.toDate().getTime() : new Date(me.endTime).getTime();
+
+  if (now > end) {
+    // Already ended — show leaderboard
+    showLeaderboard(me);
+    return;
+  }
+
+  if (now < start) {
+    // Not started yet — show waiting room
+    showMeWaiting(me, start);
+    return;
+  }
+
+  // Live — enter exam
+  enterMassExam(me);
+}
+
+function showMeWaiting(me, startTs) {
+  showMeView('browse');
+  showToast(`⏳ ${me.kdeNo} starts soon! You are registered. Come back at exam time.`);
+  // Could enhance with a waiting overlay
+}
+
+async function enterMassExam(me) {
+  // Load questions
+  let questions = [];
+  if (db) {
+    try {
+      const snap = await db.collection('massExams').doc(me.id).collection('questions').orderBy('q_no').get();
+      questions = snap.docs.map(d => d.data());
+    } catch(e) {}
+  }
+  if (!questions.length && me.questions) questions = me.questions;
+  if (!questions.length) { showToast('No questions found for this exam.'); return; }
+
+  currentMassExam = { ...me, questions };
+  meAnswers = {};
+  meQIdx = 0;
+
+  document.getElementById('meTakingTitle').textContent = me.title;
+  document.getElementById('meTakingKde').textContent = me.kdeNo + ' · ' + questions.length + ' Questions';
+
+  // Build palette
+  const grid = document.getElementById('mePaletteGrid');
+  grid.innerHTML = questions.map((_,i) => `<div class="palette-num" id="mepn${i}" onclick="meGoto(${i})">${i+1}</div>`).join('');
+
+  showMeView('taking');
+  meRenderQuestion(0);
+
+  // Timer: count down to end time
+  clearInterval(meTimerInterval);
+  const updateMeTimer = () => {
+    const endTs = me.endTime.toDate ? me.endTime.toDate().getTime() : new Date(me.endTime).getTime();
+    const remaining = Math.max(0, Math.floor((endTs - Date.now()) / 1000));
+    const h = Math.floor(remaining/3600), m = Math.floor((remaining%3600)/60), s = remaining%60;
+    document.getElementById('meTakingTimer').textContent =
+      h > 0 ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+             : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const timerEl = document.getElementById('meTakingTimer');
+    timerEl.style.background = remaining < 300 ? 'rgba(192,57,43,.5)' : remaining < 900 ? 'rgba(230,126,34,.3)' : 'rgba(255,255,255,.15)';
+    if (remaining <= 0) { clearInterval(meTimerInterval); submitMassExam(true); }
+  };
+  updateMeTimer();
+  meTimerInterval = setInterval(updateMeTimer, 1000);
+}
+
+function meRenderQuestion(idx) {
+  const qs = currentMassExam.questions;
+  const q = qs[idx];
+  if (!q) return;
+  document.getElementById('meQNum').textContent = `QUESTION ${idx+1} OF ${qs.length}`;
+  document.getElementById('meQText').textContent = q.question_en || q.question || '';
+  const ml = q.question_ml;
+  const mlEl = document.getElementById('meQTextML');
+  if (ml && ml.trim()) { mlEl.textContent = ml; mlEl.style.display = 'block'; } else { mlEl.style.display = 'none'; }
+
+  const selected = meAnswers[idx];
+  document.getElementById('meOptionList').innerHTML = ['A','B','C','D'].map((letter, i) => {
+    const key = ['option_a','option_b','option_c','option_d'][i];
+    return `<button class="option-btn ${selected===letter?'selected':''}" onclick="meSelectOption(${idx},'${letter}')">
+      <div class="option-letter">${letter}</div>
+      <div class="option-text">${q[key]||''}</div>
+    </button>`;
+  }).join('');
+
+  meUpdateProgress(idx);
+  meUpdatePalette(idx);
+}
+
+function meSelectOption(idx, letter) { meAnswers[idx] = letter; meRenderQuestion(idx); }
+function meNext() { if (meQIdx < currentMassExam.questions.length - 1) { meQIdx++; meRenderQuestion(meQIdx); } }
+function mePrev() { if (meQIdx > 0) { meQIdx--; meRenderQuestion(meQIdx); } }
+function meGoto(idx) { meQIdx = idx; meRenderQuestion(idx); }
+
+function meUpdateProgress(current) {
+  const total = currentMassExam.questions.length;
+  const answered = Object.keys(meAnswers).length;
+  const pct = Math.round(answered / total * 100);
+  document.getElementById('meProgressText').textContent = `Question ${current+1} of ${total}`;
+  document.getElementById('meProgressPct').textContent = `${pct}% Complete`;
+  document.getElementById('meProgressFill').style.width = pct + '%';
+  document.getElementById('meCntAnswered').textContent = `${answered} Answered`;
+  document.getElementById('meCntLeft').textContent = `${total - answered} Remaining`;
+}
+
+function meUpdatePalette(current) {
+  currentMassExam.questions.forEach((_,i) => {
+    const el = document.getElementById('mepn' + i);
+    if (!el) return;
+    el.className = 'palette-num';
+    if (i === current) el.classList.add('current');
+    else if (meAnswers[i]) el.classList.add('answered');
+  });
+}
+
+function meConfirmSubmit() {
+  if (confirm('Submit your mass exam answers? This cannot be undone.')) submitMassExam(false);
+}
+
+async function submitMassExam(autoSubmit) {
+  clearInterval(meTimerInterval);
+  const me = currentMassExam;
+  const qs = me.questions;
+  let correct = 0, wrong = 0, skipped = 0;
+  qs.forEach((q, i) => {
+    const ans = meAnswers[i];
+    if (!ans) { skipped++; return; }
+    if (ans === q.answer) correct++;
+    else wrong++;
+  });
+  const score = parseFloat((correct * 1 - wrong * 0.33).toFixed(2));
+  const pct = Math.round(score / qs.length * 100);
+
+  if (db && currentUser) {
+    try {
+      await db.collection('massExams').doc(me.id).collection('results').doc(currentUser.uid).set({
+        userId: currentUser.uid,
+        userName: currentUser.displayName || currentUser.email || 'Anonymous',
+        userEmail: currentUser.email,
+        score, correct, wrong, skipped, pct,
+        totalQuestions: qs.length,
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        autoSubmit
+      });
+    } catch(e) { console.error(e); }
+  }
+
+  showToast(autoSubmit ? '⏰ Time up! Exam auto-submitted.' : '✅ Exam submitted!');
+  await showLeaderboard(me);
+}
+
+async function showLeaderboard(me) {
+  showMeView('leaderboard');
+  document.getElementById('lbTitle').textContent = me.title;
+  document.getElementById('lbKde') && (document.getElementById('lbKde').textContent = me.kdeNo);
+  document.getElementById('lbMeta').textContent = me.kdeNo + ' · ' + (me.qCount || me.questions?.length || 0) + ' Questions';
+  document.getElementById('leaderboardBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading results…</td></tr>';
+  await refreshLeaderboard();
+}
+
+async function refreshLeaderboard() {
+  const me = currentMassExam;
+  if (!me || !db) return;
+  try {
+    const snap = await db.collection('massExams').doc(me.id).collection('results').orderBy('score', 'desc').get();
+    const results = snap.docs.map(d => d.data());
+    document.getElementById('lbCount').textContent = results.length + ' candidates';
+
+    const myUid = currentUser?.uid;
+    let myRank = null, myResult = null;
+    results.forEach((r, i) => { if (r.userId === myUid) { myRank = i+1; myResult = r; } });
+
+    // Show my banner
+    if (myResult) {
+      document.getElementById('myScoreBanner').style.display = 'block';
+      document.getElementById('myScoreNum').textContent = myResult.score;
+      document.getElementById('myRankNum').textContent = '#' + myRank;
+      document.getElementById('myPctNum').textContent = myResult.pct + '%';
+      document.getElementById('myCorrectWrong').textContent = `✅ ${myResult.correct} Correct · ❌ ${myResult.wrong} Wrong · ⏭️ ${myResult.skipped} Skipped`;
+    } else {
+      document.getElementById('myScoreBanner').style.display = 'none';
+    }
+
+    // Render table
+    document.getElementById('leaderboardBody').innerHTML = results.length === 0
+      ? '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No results yet. Check back after the exam.</td></tr>'
+      : results.map((r, i) => {
+          const rank = i + 1;
+          const isMe = r.userId === myUid;
+          const rankBadgeClass = rank===1?'rank-1':rank===2?'rank-2':rank===3?'rank-3':'rank-other';
+          const displayName = maskName(r.userName, isMe);
+          const timeFmt = r.submittedAt ? (r.submittedAt.toDate ? r.submittedAt.toDate().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}) : '—') : '—';
+          return `<tr class="${isMe?'my-row':''}">
+            <td><span class="rank-badge ${rankBadgeClass}">${rank}</span></td>
+            <td>${displayName}</td>
+            <td style="font-weight:700;color:var(--kerala-dark);">${r.score}</td>
+            <td style="color:var(--kerala-green);">${r.correct}</td>
+            <td style="color:var(--kerala-red);">${r.wrong}</td>
+            <td>${r.pct}%</td>
+            <td style="color:#888;font-size:12px;">${timeFmt}</td>
+          </tr>`;
+        }).join('');
+  } catch(e) {
+    document.getElementById('leaderboardBody').innerHTML = `<tr><td colspan="7" style="color:#aaa;text-align:center;padding:20px;">Could not load results: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Admin: Create Mass Exam ──
+let meNextKde = 1000; // Will be fetched from Firestore
+
+async function fetchNextKde() {
+  if (!db) return 'KDE1000';
+  try {
+    const snap = await db.collection('massExams').orderBy('kdeSeq', 'desc').limit(1).get();
+    if (!snap.empty) {
+      const last = snap.docs[0].data().kdeSeq || 999;
+      meNextKde = last + 1;
+    } else {
+      meNextKde = 1000;
+    }
+  } catch(e) { meNextKde = 1000; }
+  return 'KDE' + meNextKde;
+}
+
+function toggleMeQSource() {
+  const val = document.querySelector('input[name="meQSrc"]:checked')?.value;
+  document.getElementById('meQSrcPaper').style.display = val === 'paper' ? 'block' : 'none';
+  document.getElementById('meQSrcManual').style.display = val === 'csv' ? 'block' : 'none';
+}
+
+// Mass exam CSV upload
+let meParsedCSV = [];
+
+function meCsvDrop(e) {
+  e.preventDefault();
+  document.getElementById('meCsvDropZone').style.borderColor = '';
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) processMeCsvFile(file);
+  else showToast('Please drop a CSV file.');
+}
+
+function handleMeCsv(input) {
+  const file = input.files[0];
+  if (!file) return;
+  processMeCsvFile(file);
+}
+
+function processMeCsvFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    meParsedCSV = parseCSV(e.target.result, 'en');
+    if (!meParsedCSV.length) { showToast('CSV is empty or invalid.'); return; }
+    document.getElementById('meCsvFileLabel').textContent = `✅ ${file.name} (${meParsedCSV.length} questions)`;
+    document.getElementById('meCsvSummary').textContent = `${meParsedCSV.length} questions loaded`;
+    document.getElementById('meCsvDropZone').style.borderColor = 'var(--kerala-green)';
+    // Preview first 5 rows
+    document.getElementById('meCsvPreviewTable').innerHTML = meParsedCSV.slice(0, 5).map((q, i) =>
+      `<tr><td style="padding:5px 8px;border-bottom:1px solid var(--border);font-weight:700;">${q.q_no||i+1}</td>
+       <td style="padding:5px 8px;border-bottom:1px solid var(--border);">${String(q.question_en||q.question||'').substring(0,40)}…</td>
+       <td style="padding:5px 8px;border-bottom:1px solid var(--border);">${(q.option_a||'').substring(0,12)}</td>
+       <td style="padding:5px 8px;border-bottom:1px solid var(--border);">${(q.option_b||'').substring(0,12)}</td>
+       <td style="padding:5px 8px;border-bottom:1px solid var(--border);">${(q.option_c||'').substring(0,12)}</td>
+       <td style="padding:5px 8px;border-bottom:1px solid var(--border);">${(q.option_d||'').substring(0,12)}</td>
+       <td style="padding:5px 8px;border-bottom:1px solid var(--border);font-weight:700;color:var(--kerala-green);">${q.answer||''}</td></tr>`
+    ).join('') + (meParsedCSV.length > 5 ? `<tr><td colspan="7" style="padding:5px 8px;color:#aaa;text-align:center;font-size:11px;">…and ${meParsedCSV.length - 5} more</td></tr>` : '');
+    document.getElementById('meCsvPreview').style.display = 'block';
+  };
+  reader.readAsText(file);
+}
+
+function populateMePaperSelect() {
+  const sel = document.getElementById('mePaperSel');
+  if (!sel) return;
+  const papers = examPapers.length ? examPapers : demoExams;
+  sel.innerHTML = '<option value="">— Select a question paper —</option>' +
+    papers.map(p => `<option value="${p.id}">${p.title} (${p.qCount||0}q)</option>`).join('');
+}
+
+async function createMassExam() {
+  if (!db) { showToast('Firebase required to create mass exams.'); return; }
+  const title = document.getElementById('meTitle').value.trim();
+  const startVal = document.getElementById('meStart').value;
+  const endVal = document.getElementById('meEnd').value;
+  const fee = parseFloat(document.getElementById('meFee').value) || 0;
+  const cat = document.getElementById('meCat').value;
+  const sub = document.getElementById('meSub').value;
+
+  if (!title) { showToast('Please enter an exam title.'); return; }
+  if (!startVal || !endVal) { showToast('Please set both start and end times.'); return; }
+  const startTime = new Date(startVal);
+  const endTime = new Date(endVal);
+  if (endTime <= startTime) { showToast('End time must be after start time.'); return; }
+
+  const kdeNo = await fetchNextKde();
+
+  // Get questions
+  const src = document.querySelector('input[name="meQSrc"]:checked')?.value || 'paper';
+  let questions = [];
+  if (src === 'paper') {
+    const paperId = document.getElementById('mePaperSel').value;
+    if (!paperId) { showToast('Please select a question paper.'); return; }
+    try {
+      const snap = await db.collection('papers').doc(paperId).collection('questions').orderBy('q_no').get();
+      questions = snap.docs.map(d => d.data());
+    } catch(e) { showToast('Could not load questions: ' + e.message); return; }
+    if (!questions.length) { showToast('Selected paper has no questions.'); return; }
+  } else {
+    // CSV upload source
+    if (!meParsedCSV.length) { showToast('Please upload a CSV file with questions.'); return; }
+    questions = meParsedCSV.map((q, i) => ({
+      q_no: parseInt(q.q_no) || i+1,
+      question_en: q.question_en || q.question || '',
+      question_ml: q.question_ml || '',
+      option_a: q.option_a || '', option_b: q.option_b || '',
+      option_c: q.option_c || '', option_d: q.option_d || '',
+      answer: (q.answer || '').toUpperCase()
+    }));
+  }
+
+  const meData = {
+    kdeNo, kdeSeq: meNextKde,
+    title, category: cat, subCategory: sub,
+    startTime: firebase.firestore.Timestamp.fromDate(startTime),
+    endTime: firebase.firestore.Timestamp.fromDate(endTime),
+    fee, qCount: questions.length,
+    participants: [],
+    createdBy: currentUser.uid,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    const ref = await db.collection('massExams').add(meData);
+    // Write questions subcollection
+    const batch = db.batch();
+    questions.forEach((q, i) => {
+      const qRef = db.collection('massExams').doc(ref.id).collection('questions').doc(`q${i+1}`);
+      batch.set(qRef, { ...q, q_no: q.q_no||i+1 });
+    });
+    await batch.commit();
+    showToast(`✅ Mass Exam ${kdeNo} created successfully!`);
+    // Reset form
+    document.getElementById('meTitle').value = '';
+    document.getElementById('meStart').value = '';
+    document.getElementById('meEnd').value = '';
+    document.getElementById('meFee').value = '0';
+    document.getElementById('meCat').value = '';
+    meParsedCSV = [];
+    document.getElementById('meCsvFileLabel').textContent = '';
+    document.getElementById('meCsvPreview').style.display = 'none';
+    document.getElementById('meCsvDropZone').style.borderColor = '';
+    loadMeAdminTable();
+  } catch(e) { showToast('Create failed: ' + e.message); }
+}
+
+async function loadMeAdminTable() {
+  const tbody = document.getElementById('meAdminTable');
+  if (!tbody || !db) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:16px;"><i class="fas fa-spinner fa-spin"></i></td></tr>';
+  try {
+    const snap = await db.collection('massExams').orderBy('startTime', 'desc').get();
+    const exams = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    tbody.innerHTML = exams.length === 0
+      ? '<tr><td colspan="8" style="color:#aaa;text-align:center;padding:16px;">No mass exams yet.</td></tr>'
+      : exams.map(me => {
+          const start = me.startTime ? (me.startTime.toDate ? me.startTime.toDate() : new Date(me.startTime)) : new Date();
+          const end = me.endTime ? (me.endTime.toDate ? me.endTime.toDate() : new Date(me.endTime)) : new Date();
+          const status = getMeStatus(me);
+          const statusBadge = status === 'live'
+            ? '<span class="mass-exam-status status-live" style="font-size:10px;"><i class="fas fa-circle" style="font-size:7px"></i> LIVE</span>'
+            : status === 'upcoming'
+              ? '<span class="mass-exam-status status-upcoming" style="font-size:10px;">Upcoming</span>'
+              : '<span class="mass-exam-status status-ended" style="font-size:10px;">Ended</span>';
+          return `<tr>
+            <td><span class="kde-badge" style="font-size:11px;">${me.kdeNo}</span></td>
+            <td style="font-weight:600;">${me.title}</td>
+            <td style="font-size:12px;">${start.toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</td>
+            <td style="font-size:12px;">${end.toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</td>
+            <td>${me.fee > 0 ? '₹'+me.fee : '<span style="color:var(--kerala-green)">Free</span>'}</td>
+            <td>${(me.participants||[]).length}</td>
+            <td>${statusBadge}</td>
+            <td style="display:flex;gap:6px;">
+              <button class="btn btn-sm btn-outline" onclick="viewMeResults('${me.id}')"><i class="fas fa-trophy"></i></button>
+              <button class="btn btn-sm btn-danger" onclick="deleteMassExam('${me.id}')"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`;
+        }).join('');
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="8" style="color:#aaa;padding:16px;">Error: ${e.message}</td></tr>`; }
+}
+
+async function viewMeResults(meId) {
+  if (!db) return;
+  const snap = await db.collection('massExams').doc(meId).get();
+  if (!snap.exists) return;
+  currentMassExam = { id: meId, ...snap.data() };
+  showPage('massexam');
+  await showLeaderboard(currentMassExam);
+}
+
+async function deleteMassExam(meId) {
+  if (!confirm('Delete this mass exam? All results will be lost.')) return;
+  try {
+    await db.collection('massExams').doc(meId).delete();
+    showToast('Mass exam deleted.');
+    loadMeAdminTable();
+  } catch(e) { showToast('Delete failed: ' + e.message); }
+}
+
+// ── Join by code ──
+async function joinByCode() {
+  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if (!code.startsWith('KDE') || code.length < 6) { showToast('Please enter a valid KDE code (e.g. KDE1000)'); return; }
+  if (!currentUser && auth) { openAuth(); return; }
+  if (!db) { showToast('Firebase required.'); return; }
+  try {
+    const snap = await db.collection('massExams').where('kdeNo', '==', code).limit(1).get();
+    if (snap.empty) { showToast('Exam not found. Check the KDE number.'); return; }
+    const me = { id: snap.docs[0].id, ...snap.docs[0].data() };
+    // Merge into massExams array if not already there
+    if (!massExams.find(x => x.id === me.id)) massExams.push(me);
+    currentMassExam = me;
+    showMePayModal(me);
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+// ── Show My Exams: include Mass Exam results ──
+async function loadMyMassResults() {
+  const container = document.getElementById('myMassResults');
+  if (!container || !db || !currentUser) return;
+  container.innerHTML = '<div style="color:#aaa;font-size:13px;padding:16px;text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading your results…</div>';
+  try {
+    // Avoid collectionGroup index requirement: fetch recent massExams, then check results subcollection for this user
+    const meSnap = await db.collection('massExams').orderBy('startTime', 'desc').limit(30).get();
+    if (meSnap.empty) { container.innerHTML = '<p style="color:#aaa;font-size:13px;padding:16px;">No mass exams available yet.</p>'; return; }
+    const results = [];
+    await Promise.all(meSnap.docs.map(async meDoc => {
+      try {
+        const rDoc = await db.collection('massExams').doc(meDoc.id).collection('results').doc(currentUser.uid).get();
+        if (rDoc.exists) {
+          results.push({ meId: meDoc.id, me: meDoc.data(), r: rDoc.data() });
+        }
+      } catch(e) {}
+    }));
+    if (!results.length) { container.innerHTML = '<p style="color:#aaa;font-size:13px;padding:16px;">No mass exam results yet. Join a mass exam to see results here.</p>'; return; }
+    // Sort by submittedAt desc
+    results.sort((a,b) => {
+      const ta = a.r.submittedAt?.toMillis ? a.r.submittedAt.toMillis() : 0;
+      const tb = b.r.submittedAt?.toMillis ? b.r.submittedAt.toMillis() : 0;
+      return tb - ta;
+    });
+    container.innerHTML = results.map(({ meId, me, r }) => {
+      const grade = r.pct >= 80 ? '🏆' : r.pct >= 60 ? '✅' : r.pct >= 40 ? '⚠️' : '❌';
+      return `<div class="mass-exam-card" style="padding:14px 18px;cursor:pointer;" onclick="viewMeLeaderboardById('${meId}')">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <span class="kde-badge" style="font-size:11px;">${me.kdeNo||'KDE?'}</span>
+          <span style="font-size:14px;font-weight:700;color:var(--kerala-dark);flex:1;">${me.title||'Mass Exam'}</span>
+          <span style="font-size:22px;">${grade}</span>
+        </div>
+        <div style="display:flex;gap:16px;font-size:13px;flex-wrap:wrap;">
+          <span style="font-weight:700;color:var(--kerala-dark);">Score: ${r.score}</span>
+          <span style="color:var(--kerala-green);">✅ ${r.correct}</span>
+          <span style="color:var(--kerala-red);">❌ ${r.wrong}</span>
+          <span style="color:#888;">⏭️ ${r.skipped}</span>
+          <span style="color:var(--kerala-gold);font-weight:700;">${r.pct}%</span>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px;">Tap to view leaderboard</div>
+      </div>`;
+    }).join('');
+  } catch(e) { container.innerHTML = `<p style="color:#aaa;font-size:13px;padding:16px;">Could not load results: ${e.message}</p>`; }
+}
+
+async function viewMeLeaderboardById(meId) {
+  if (!db) return;
+  const snap = await db.collection('massExams').doc(meId).get();
+  if (!snap.exists) return;
+  currentMassExam = { id: meId, ...snap.data() };
+  showPage('massexam');
+  await showLeaderboard(currentMassExam);
+}
+
+function showMeView(view) {
+  ['browse','join','taking','leaderboard'].forEach(v => {
+    const el = document.getElementById('meView-' + v);
+    if (el) el.style.display = v === view ? 'block' : 'none';
+  });
 }
 
 // ─── BUILT-IN QUESTIONS (KFC 2025 Sample) ─────
@@ -1386,7 +3888,9 @@ async function init() {
       const snap = await db.collection('papers').get();
       if (!snap.empty) examPapers = snap.docs.map(d => ({id:d.id, ...d.data()}));
     } catch(e) {}
+    await loadSubCatCache();
   }
+  await loadFavorites();
   renderHomeGrid();
   document.getElementById('statUsers').textContent = '—';
 }
