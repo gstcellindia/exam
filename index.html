@@ -931,6 +931,47 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
 .exam-history-score { font-size:20px; font-weight:800; color:var(--kerala-dark); text-align:right; }
 .exam-history-grade { font-size:11px; font-weight:600; text-align:right; }
 
+/* ─── NOTIFICATION BADGE ─────────────────────── */
+.notif-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--kerala-red); color: white;
+  font-size: 10px; font-weight: 800; border-radius: 50%;
+  min-width: 17px; height: 17px; padding: 0 4px;
+  margin-left: 4px; line-height: 1; vertical-align: middle;
+  animation: notifpulse 2s infinite;
+}
+@keyframes notifpulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+
+/* ─── NOTICE BOARD ───────────────────────────── */
+.notice-board {
+  background: linear-gradient(135deg, #FFF8E7, #FFFBF0);
+  border: 1.5px solid #F0D680; border-radius: 14px;
+  padding: 0; margin-bottom: 24px; overflow: hidden;
+}
+.notice-board-header {
+  background: linear-gradient(135deg, var(--kerala-dark), #2E4A8A);
+  color: white; padding: 12px 18px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 700; letter-spacing: .5px;
+}
+.notice-board-header .notice-icon { font-size: 18px; }
+.notice-board-header .notice-count {
+  margin-left: auto; background: var(--kerala-gold); color: var(--kerala-dark);
+  font-size: 11px; font-weight: 800; border-radius: 20px; padding: 2px 9px;
+}
+.notice-item {
+  padding: 14px 18px; border-bottom: 1px solid #F0E8C0;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.notice-item:last-child { border-bottom: none; }
+.notice-item .notice-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--kerala-gold); flex-shrink: 0; margin-top: 5px;
+}
+.notice-item .notice-msg { font-size: 14px; color: var(--kerala-dark); font-weight: 500; line-height: 1.6; flex: 1; }
+.notice-item .notice-time { font-size: 11px; color: #aaa; white-space: nowrap; margin-top: 3px; }
+.notice-board-empty { padding: 22px 18px; font-size: 13px; color: #aaa; text-align: center; }
+
 /* ─── PLAN COUNTDOWN BANNER ─────────────────── */
 .plan-countdown-bar {
   background: linear-gradient(135deg, #1A2744, #243860);
@@ -1164,8 +1205,8 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
   </div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('home')" id="tab-home"><i class="fas fa-home"></i> <span>Home</span></button>
-    <button class="nav-tab" onclick="showPage('exams')" id="tab-exams"><i class="fas fa-file-alt"></i> <span>My Exams</span></button>
-    <button class="nav-tab" onclick="showPage('massexam')" id="tab-massexam"><i class="fas fa-users-cog"></i> <span>Mass Exam</span></button>
+    <button class="nav-tab" onclick="showPage('exams')" id="tab-exams"><i class="fas fa-file-alt"></i> <span>My Exams</span><span class="notif-badge" id="notifBadgeExams" style="display:none">0</span></button>
+    <button class="nav-tab" onclick="showPage('massexam')" id="tab-massexam"><i class="fas fa-users-cog"></i> <span>Mass Exam</span><span class="notif-badge" id="notifBadgeMass" style="display:none">0</span></button>
     <button class="nav-tab" id="tab-plan" style="display:none" onclick="showPage('plan')"><i class="fas fa-crown"></i> <span>Plans</span></button>
     <button class="nav-tab" id="tab-admin" style="display:none" onclick="showPage('admin')"><i class="fas fa-cog"></i> <span>Admin</span></button>
   </div>
@@ -1213,12 +1254,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
     </div>
   </div>
 
-  <!-- Policy quick links on home page -->
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;">
-    <button class="policy-link" onclick="openPolicy('terms')" style="font-size:13px;"><i class="fas fa-file-contract" style="margin-right:4px;"></i>Terms &amp; Conditions</button>
-    <span style="color:#ccc;">|</span>
-    <button class="policy-link" onclick="openPolicy('refund')" style="font-size:13px;"><i class="fas fa-undo-alt" style="margin-right:4px;"></i>Refund Policy</button>
-  </div>
+
 
   <!-- Sidebar + Content layout -->
   <div class="home-layout">
@@ -1261,6 +1297,9 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
   <div id="examsPlanCountdown" style="display:none;"></div>
   <!-- State: list / taking / result -->
   <div id="examList">
+    <!-- ─── NOTICE BOARD ─── -->
+    <div id="noticeBoardWrap" style="display:none"></div>
+
     <div class="section-title"><i class="fas fa-heart" style="color:#E74C3C"></i> My Favourite Exams</div>
     <div class="exam-grid" id="examListGrid"></div>
 
@@ -1527,6 +1566,18 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
     </div>
     <div id="catPlanSummaryEmpty" style="color:#aaa;font-size:13px;margin-top:12px;text-align:center;display:none;">Select at least one category and duration above to see the total.</div>
   </div>
+  <!-- Promo Code -->
+  <div style="margin-top:24px;">
+    <div class="section-title"><i class="fas fa-percent" style="color:var(--kerala-gold)"></i> Have a Promo Code?</div>
+    <div style="background:white;border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 20px;max-width:420px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+      <div style="flex:1;min-width:180px;">
+        <label class="form-label">Enter Promo Code</label>
+        <input class="form-input" id="userPromoInput" placeholder="e.g. SAVE20" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <button class="btn btn-gold" onclick="applyPromoCode()"><i class="fas fa-tag"></i> Apply</button>
+    </div>
+    <div id="promoApplyResult" style="margin-top:8px;font-size:13px;font-weight:600;max-width:420px;"></div>
+  </div>
 </div>
 
 <div class="page" id="page-admin">
@@ -1542,6 +1593,9 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
       <div class="admin-nav-item" onclick="showAdminPanel('results')"><i class="fas fa-poll"></i> Results & Analytics</div>
       <div class="admin-nav-item" onclick="showAdminPanel('massexam')"><i class="fas fa-users-cog"></i> Mass Exam Manager</div>
       <div class="admin-nav-item" onclick="showAdminPanel('payments')"><i class="fas fa-money-bill-wave"></i> Payments</div>
+      <div class="admin-nav-item" onclick="showAdminPanel('noticeboard')"><i class="fas fa-bullhorn"></i> Notice Board</div>
+      <div class="admin-nav-item" onclick="showAdminPanel('planpricing')"><i class="fas fa-tags"></i> Plan Pricing</div>
+      <div class="admin-nav-item" onclick="showAdminPanel('promocodes')"><i class="fas fa-percent"></i> Promo Codes</div>
     </div>
     <div style="flex:1">
       <!-- Overview -->
@@ -1648,7 +1702,8 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
               <span><i class="fas fa-unlock" style="color:var(--kerala-green)"></i> <span id="freeCount">0</span> Free questions (shown first)</span>
               <span><i class="fas fa-lock" style="color:#E65100"></i> <span id="lockedCount">0</span> Locked questions (require payment)</span>
             </div>
-            <button class="btn btn-primary" style="margin-top:14px" onclick="uploadCSVToFirebase()"><i class="fas fa-cloud-upload-alt"></i> Upload to Database</button>
+            <button class="btn btn-primary" style="margin-top:14px" id="uploadToDbBtn" onclick="uploadCSVToFirebase()"><i class="fas fa-cloud-upload-alt"></i> Upload to Database</button>
+            <div id="uploadStatusMsg" style="margin-top:10px;font-size:13px;font-weight:600;display:none;"></div>
           </div>
         </div>
         <div class="admin-card">
@@ -1874,6 +1929,159 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
           </div>
         </div>
       </div>
+
+      <!-- ─── NOTICE BOARD PANEL ─────────────── -->
+      <div class="admin-panel" id="panel-noticeboard">
+        <div class="admin-card">
+          <h3><i class="fas fa-bullhorn" style="color:var(--kerala-gold);margin-right:8px;"></i> Send Notice to Users</h3>
+          <p style="font-size:13px;color:#666;margin-bottom:16px;">Messages posted here appear on the Notice Board in every user's <strong>My Exams</strong> page.</p>
+          <div style="display:grid;gap:12px;">
+            <div>
+              <label class="form-label">Notice Message</label>
+              <textarea class="form-input" id="adminNoticeMsg" rows="3" placeholder="Type your announcement or notice here…" style="resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn btn-primary" onclick="postAdminNotice()"><i class="fas fa-paper-plane"></i> Post Notice</button>
+              <span style="font-size:12px;color:#888;">Notices are visible to all logged-in users immediately.</span>
+            </div>
+          </div>
+        </div>
+        <div class="admin-card" style="margin-top:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;"><i class="fas fa-list" style="margin-right:6px;"></i> Posted Notices</h3>
+            <button class="btn btn-sm btn-outline" onclick="loadAdminNotices()"><i class="fas fa-sync"></i> Refresh</button>
+          </div>
+          <div id="adminNoticesList"><div style="color:#aaa;font-size:13px;text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- ─── PLAN PRICING PANEL ─────────────── -->
+      <div class="admin-panel" id="panel-planpricing">
+        <div class="admin-card">
+          <h3><i class="fas fa-tags" style="color:var(--kerala-gold);margin-right:8px;"></i> Plan Pricing Manager</h3>
+          <p style="font-size:13px;color:#666;margin-bottom:18px;">Set plan amounts and durations for All Categories or individual categories. Changes take effect from the selected <strong>From Date</strong> prospectively.</p>
+
+          <!-- Global Plans Pricing -->
+          <div style="margin-bottom:22px;">
+            <div style="font-size:14px;font-weight:700;color:var(--kerala-dark);margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-globe" style="color:var(--kerala-gold)"></i> All Categories Plans</div>
+            <div id="globalPricingRows" style="display:grid;gap:10px;"></div>
+            <button class="btn btn-sm" style="margin-top:10px;background:#EEF3FF;color:var(--kerala-dark);border:1.5px solid var(--border);" onclick="addGlobalPricingRow()"><i class="fas fa-plus"></i> Add Duration Option</button>
+          </div>
+
+          <!-- Category Plans Pricing -->
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--kerala-dark);margin-bottom:12px;display:flex;align-items:center;gap:8px;"><i class="fas fa-layer-group" style="color:var(--kerala-gold)"></i> Category-wise Plans</div>
+            <div style="margin-bottom:12px;">
+              <label class="form-label">Select Category to Configure</label>
+              <select class="form-input" id="pricingCatSelect" onchange="loadCatPricingRows()" style="max-width:320px;">
+                <option value="">— Select Category —</option>
+              </select>
+            </div>
+            <div id="catPricingRows" style="display:grid;gap:10px;"></div>
+            <button class="btn btn-sm" id="addCatPricingBtn" style="margin-top:10px;background:#EEF3FF;color:var(--kerala-dark);border:1.5px solid var(--border);display:none;" onclick="addCatPricingRow()"><i class="fas fa-plus"></i> Add Duration Option</button>
+          </div>
+
+          <div style="margin-top:22px;padding-top:16px;border-top:1.5px solid var(--border);display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div>
+              <label class="form-label">Effective From Date</label>
+              <input type="date" class="form-input" id="pricingFromDate" style="width:180px;">
+            </div>
+            <div style="padding-top:22px;">
+              <button class="btn btn-primary" onclick="savePlanPricing()"><i class="fas fa-save"></i> Save All Pricing</button>
+            </div>
+            <span style="font-size:12px;color:#888;padding-top:22px;">Pricing applies to new subscriptions from the selected date.</span>
+          </div>
+        </div>
+
+        <!-- Current Pricing Preview -->
+        <div class="admin-card" style="margin-top:16px;">
+          <h3><i class="fas fa-eye" style="margin-right:6px;"></i> Current Effective Pricing</h3>
+          <div id="currentPricingPreview" style="font-size:13px;color:#aaa;padding:16px;text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>
+        </div>
+      </div>
+
+      <!-- ─── PROMO CODES PANEL ──────────────── -->
+      <div class="admin-panel" id="panel-promocodes">
+        <div class="admin-card" style="margin-bottom:16px;">
+          <h3><i class="fas fa-percent" style="color:var(--kerala-gold);margin-right:8px;"></i> Issue Promo Code – Individual</h3>
+          <p style="font-size:13px;color:#666;margin-bottom:14px;">Issue a personalised promo code to a specific user by their registered mobile number.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div>
+              <label class="form-label"><i class="fas fa-mobile-alt" style="color:var(--kerala-gold)"></i> Mobile Number</label>
+              <input class="form-input" id="promoMobile" placeholder="e.g. 9876543210" maxlength="10" type="tel">
+            </div>
+            <div>
+              <label class="form-label"><i class="fas fa-percent" style="color:var(--kerala-gold)"></i> Discount %</label>
+              <input class="form-input" type="number" id="promoDiscountInd" placeholder="e.g. 20" min="1" max="100">
+            </div>
+            <div>
+              <label class="form-label"><i class="fas fa-key"></i> Promo Code</label>
+              <div style="display:flex;gap:6px;">
+                <input class="form-input" id="promoCodeInd" placeholder="e.g. SAVE20" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+                <button class="btn btn-sm btn-outline" onclick="genPromoCode('ind')" title="Auto-generate"><i class="fas fa-dice"></i></button>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div>
+              <label class="form-label">Expiry Date (optional)</label>
+              <input type="date" class="form-input" id="promoExpiryInd">
+            </div>
+            <div>
+              <label class="form-label">Max Uses (optional)</label>
+              <input type="number" class="form-input" id="promoMaxUsesInd" placeholder="Leave blank = unlimited" min="1">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="issueIndividualPromo()"><i class="fas fa-paper-plane"></i> Issue to User</button>
+        </div>
+
+        <div class="admin-card" style="margin-bottom:16px;">
+          <h3><i class="fas fa-globe" style="color:var(--kerala-gold);margin-right:8px;"></i> Issue General Promo Code</h3>
+          <p style="font-size:13px;color:#666;margin-bottom:14px;">Issue a promo code valid for all users.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div>
+              <label class="form-label"><i class="fas fa-key"></i> Promo Code</label>
+              <div style="display:flex;gap:6px;">
+                <input class="form-input" id="promoCodeGen" placeholder="e.g. WELCOME25" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+                <button class="btn btn-sm btn-outline" onclick="genPromoCode('gen')" title="Auto-generate"><i class="fas fa-dice"></i></button>
+              </div>
+            </div>
+            <div>
+              <label class="form-label"><i class="fas fa-percent" style="color:var(--kerala-gold)"></i> Discount %</label>
+              <input class="form-input" type="number" id="promoDiscountGen" placeholder="e.g. 15" min="1" max="100">
+            </div>
+            <div>
+              <label class="form-label">Max Uses per User</label>
+              <input type="number" class="form-input" id="promoMaxPerUserGen" placeholder="1" min="1" value="1">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div>
+              <label class="form-label">Expiry Date (optional)</label>
+              <input type="date" class="form-input" id="promoExpiryGen">
+            </div>
+            <div>
+              <label class="form-label">Total Max Uses (optional)</label>
+              <input type="number" class="form-input" id="promoTotalMaxGen" placeholder="Leave blank = unlimited" min="1">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="issueGeneralPromo()"><i class="fas fa-broadcast-tower"></i> Issue General Code</button>
+        </div>
+
+        <div class="admin-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;"><i class="fas fa-list" style="margin-right:6px;"></i> All Promo Codes</h3>
+            <button class="btn btn-sm btn-outline" onclick="loadPromoCodes()"><i class="fas fa-sync"></i> Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Code</th><th>Type</th><th>User / Mobile</th><th>Discount</th><th>Uses</th><th>Expiry</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="promoCodesTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div><!-- end page-admin -->
@@ -2083,7 +2291,15 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
     </div>
     <!-- Questions table -->
     <div style="padding:20px;overflow-x:auto;">
-      <div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;"><i class="fas fa-list-ol" style="margin-right:6px;color:var(--kerala-gold)"></i>Questions</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1.5px;"><i class="fas fa-list-ol" style="margin-right:6px;color:var(--kerala-gold)"></i>Questions</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:#555;font-weight:600;">Lock all:</span>
+          <button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;border:1.5px solid #FFB74D;" onclick="setEditAllLock(true)"><i class="fas fa-lock"></i> Lock All</button>
+          <button class="btn btn-sm" style="background:#E8F5E9;color:var(--kerala-green);border:1.5px solid #81C784;" onclick="setEditAllLock(false)"><i class="fas fa-unlock"></i> Unlock All</button>
+          <span id="editLockSummary" style="font-size:12px;color:#888;"></span>
+        </div>
+      </div>
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <thead>
           <tr>
@@ -2094,6 +2310,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
             <th style="min-width:130px;">Option C</th>
             <th style="min-width:130px;">Option D</th>
             <th style="width:70px;">Answer</th>
+            <th style="width:60px;" title="Lock/Unlock question"><i class="fas fa-lock"></i></th>
             <th style="width:50px;"></th>
           </tr>
         </thead>
@@ -2387,13 +2604,7 @@ function doRegisterWithConsent() {
   doRegister();
 }
 
-// ─── HIDE FOOTER DURING EXAM ─────────────────
-const _origShowPage = showPage;
-function showPage(page) {
-  _origShowPage(page);
-  const footer = document.getElementById('siteFooter');
-  if (footer) footer.style.display = ['exam','massexam'].includes(page) ? 'none' : 'block';
-}
+// ─── HIDE FOOTER DURING EXAM — merged into showPage above ─────────────────
 </script>
 <script>
 // ─── FIREBASE CONFIG ─────────────────────────
@@ -2453,9 +2664,11 @@ function showPage(page) {
   const tabEl = document.getElementById('tab-' + page);
   if (tabEl) tabEl.classList.add('active');
   if (page === 'admin') loadAdminData();
-  if (page === 'exams') renderExamList();
-  if (page === 'massexam') { showMeView('browse'); loadMassExams(); }
+  if (page === 'exams') { renderExamList(); clearNotifBadge('exams', 'notifBadgeExams'); loadNoticeBoard(); }
+  if (page === 'massexam') { showMeView('browse'); loadMassExams(); clearNotifBadge('massexam', 'notifBadgeMass'); }
   if (page === 'plan') { renderPlanPage(); updatePlanCountdowns(); }
+  const footer = document.getElementById('siteFooter');
+  if (footer) footer.style.display = ['exam','massexam'].includes(page) ? 'none' : 'block';
 }
 
 // ─── AUTH FUNCTIONS ───────────────────────────
@@ -3564,6 +3777,26 @@ let activePlans = []; // loaded from Firestore
 // Cart for category plan builder
 let catPlanCart = {}; // { 'Account Test': 3 } — value is months (3 or 12)
 
+function getCatPricingOptions(cat) {
+  // Use dynamic pricing if loaded and effective
+  if (dynamicPlanPricing) {
+    const now = Date.now();
+    const ef = dynamicPlanPricing.effectiveFrom?.toMillis
+      ? dynamicPlanPricing.effectiveFrom.toMillis()
+      : (dynamicPlanPricing.effectiveFrom ? new Date(dynamicPlanPricing.effectiveFrom).getTime() : 0);
+    if (ef <= now) {
+      // Try category-specific pricing first
+      const catOptions = dynamicPlanPricing.categories?.[cat];
+      if (catOptions && catOptions.length) return catOptions;
+      // Fall back to local config cache
+      const localCatOptions = planPricingConfig.categories?.[cat];
+      if (localCatOptions && localCatOptions.length) return localCatOptions;
+    }
+  }
+  // Default fallback
+  return [{ months: 3, amount: 100 }, { months: 12, amount: 200 }];
+}
+
 function renderPlanPage() {
   // Render category rows
   const rows = document.getElementById('catPlanRows');
@@ -3573,12 +3806,17 @@ function renderPlanPage() {
     const activePlan = activePlans.find(p => (p.type === 'category' || p.type === 'global') && (p.type === 'global' || p.category === cat) && p.expiresAt > Date.now());
     const icon = CATEGORY_ICONS[cat] || '📄';
     const cartVal = catPlanCart[cat];
-    const pill3 = `<span class="cat-plan-pill ${cartVal===3?'selected':''} ${activePlan?'active-plan':''}" onclick="toggleCatPlan('${cat.replace(/'/g,"\\'")}',3)">3 months – ₹100</span>`;
-    const pill12 = `<span class="cat-plan-pill ${cartVal===12?'selected':''} ${activePlan?'active-plan':''}" onclick="toggleCatPlan('${cat.replace(/'/g,"\\'")}',12)">12 months – ₹200</span>`;
+    const options = getCatPricingOptions(cat);
+    const pills = options.map(opt =>
+      `<span class="cat-plan-pill ${cartVal===opt.months?'selected':''} ${activePlan?'active-plan':''}"
+        onclick="toggleCatPlan('${cat.replace(/'/g,"\\'")}',${opt.months},${opt.amount})">
+        ${opt.months} month${opt.months>1?'s':''} – ₹${opt.amount}
+      </span>`
+    ).join('');
     const activeInfo = activePlan ? `<span style="font-size:11px;color:var(--kerala-green);margin-left:6px;">✅ Active until ${new Date(activePlan.expiresAt).toLocaleDateString('en-IN')}</span>` : '';
     return `<div class="cat-plan-row">
       <span class="cat-plan-name">${icon} ${cat}${activeInfo}</span>
-      <div class="cat-plan-sel">${pill3}${pill12}</div>
+      <div class="cat-plan-sel">${pills}</div>
     </div>`;
   }).join('');
   updateCatPlanSummary();
@@ -3593,11 +3831,12 @@ function renderPlanPage() {
   });
 }
 
-function toggleCatPlan(cat, months) {
-  if (catPlanCart[cat] === months) {
+// catPlanCart now stores { cat: { months, amount } }
+function toggleCatPlan(cat, months, amount) {
+  if (catPlanCart[cat] && catPlanCart[cat].months === months) {
     delete catPlanCart[cat];
   } else {
-    catPlanCart[cat] = months;
+    catPlanCart[cat] = { months, amount };
   }
   renderPlanPage();
 }
@@ -3613,8 +3852,8 @@ function updateCatPlanSummary() {
     return;
   }
   if (emptyEl) emptyEl.style.display = 'none';
-  const total = entries.reduce((s, [, m]) => s + (m === 3 ? 100 : 200), 0);
-  const desc = entries.map(([cat, m]) => `${cat} (${m}m)`).join(', ');
+  const total = entries.reduce((s, [, v]) => s + (v.amount || 0), 0);
+  const desc = entries.map(([cat, v]) => `${cat} (${v.months}m)`).join(', ');
   document.getElementById('catPlanTotal').textContent = total;
   document.getElementById('catPlanItemsDesc').textContent = desc;
   summaryEl.style.display = 'flex';
@@ -3622,10 +3861,17 @@ function updateCatPlanSummary() {
 
 async function purchaseGlobalPlan(months, amount) {
   if (!currentUser) { openAuth(); return; }
-  if (!confirm(`Subscribe to All Categories for ${months} months at ₹${amount}?`)) return;
+  let finalAmount = amount;
+  if (appliedPromo) {
+    finalAmount = Math.round(amount * (1 - appliedPromo.discount / 100));
+    if (!confirm(`Subscribe to All Categories for ${months} months.\nOriginal: ₹${amount}\nDiscount (${appliedPromo.discount}%): -₹${amount - finalAmount}\nFinal: ₹${finalAmount}\n\nProceed?`)) return;
+  } else {
+    if (!confirm(`Subscribe to All Categories for ${months} months at ₹${amount}?`)) return;
+  }
   const expiresAt = Date.now() + months * 30 * 24 * 60 * 60 * 1000;
   const purchaseData = {
-    type: 'global', months, amount, category: 'All',
+    type: 'global', months, amount: finalAmount, originalAmount: amount, category: 'All',
+    promoCode: appliedPromo?.code || null,
     purchasedAt: firebase.firestore.FieldValue.serverTimestamp(),
     expiresAt: new Date(expiresAt),
     paymentId: 'demo_' + Date.now()
@@ -3633,10 +3879,20 @@ async function purchaseGlobalPlan(months, amount) {
   if (db) {
     try {
       await db.collection('users').doc(currentUser.uid).collection('purchases').add(purchaseData);
+      if (appliedPromo) {
+        await db.collection('promoCodes').doc(appliedPromo.docId).update({
+          usedCount: firebase.firestore.FieldValue.increment(1)
+        });
+      }
     } catch(e) { showToast('Error saving plan: ' + e.message); return; }
   }
+  appliedPromo = null;
+  const promoResultEl = document.getElementById('promoApplyResult');
+  if (promoResultEl) promoResultEl.innerHTML = '';
+  const promoInputEl = document.getElementById('userPromoInput');
+  if (promoInputEl) promoInputEl.value = '';
   // Update local
-  activePlans.push({ type: 'global', months, amount, expiresAt });
+  activePlans.push({ type: 'global', months, amount: finalAmount, expiresAt });
   // Unlock all papers
   const papers = examPapers.length ? examPapers : demoExams;
   papers.forEach(p => unlockedPapers.add(p.id));
@@ -3654,9 +3910,10 @@ async function purchaseCatPlans() {
   const total = entries.reduce((s, [, m]) => s + (m === 3 ? 100 : 200), 0);
   if (!confirm(`Activate selected category plans for ₹${total}?`)) return;
 
-  for (const [cat, months] of entries) {
+  for (const [cat, val] of entries) {
+    const months = val.months;
+    const amount = val.amount;
     const expiresAt = Date.now() + months * 30 * 24 * 60 * 60 * 1000;
-    const amount = months === 3 ? 100 : 200;
     const purchaseData = {
       type: 'category', category: cat, months, amount,
       purchasedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -3761,6 +4018,9 @@ function showAdminPanel(panel) {
   if (panel === 'categories') loadCategoryManager();
   if (panel === 'massexam') { populateMePaperSelect(); loadMeAdminTable(); fetchNextKde(); }
   if (panel === 'payments') loadPayments();
+  if (panel === 'noticeboard') loadAdminNotices();
+  if (panel === 'planpricing') initPlanPricingAdmin();
+  if (panel === 'promocodes') loadPromoCodes();
 }
 
 // ─── ADMIN ──────────────────────────────────── (enhanced version defined above)
@@ -3897,13 +4157,21 @@ async function openEditPaper(paperId) {
 function renderEditTable() {
   const tbody = document.getElementById('editQList');
   if (!editingQuestions.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="color:#aaa;text-align:center;padding:20px;">No questions found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="color:#aaa;text-align:center;padding:20px;">No questions found.</td></tr>';
     document.getElementById('editQCount').value = 0;
+    updateEditLockSummary();
     return;
   }
   document.getElementById('editQCount').value = editingQuestions.length;
-  tbody.innerHTML = editingQuestions.map((q, i) => `
-    <tr id="erow-${i}">
+  tbody.innerHTML = editingQuestions.map((q, i) => {
+    const isLocked = !!q.locked;
+    const lockBtnStyle = isLocked
+      ? 'background:#FFF3E0;color:#E65100;border:1.5px solid #FFB74D;'
+      : 'background:#E8F5E9;color:var(--kerala-green);border:1.5px solid #81C784;';
+    const lockIcon = isLocked ? 'fa-lock' : 'fa-unlock';
+    const lockTitle = isLocked ? 'Locked – click to unlock' : 'Unlocked – click to lock';
+    return `
+    <tr id="erow-${i}" class="${isLocked ? 'preview-row-locked' : ''}">
       <td style="font-weight:700;color:var(--kerala-dark);text-align:center;">${q.q_no||i+1}</td>
       <td><textarea class="edit-cell" rows="3" style="width:100%;min-width:300px;" onchange="editingQuestions[${i}].question_en=this.value">${esc(q.question_en||q.question||'')}</textarea></td>
       <td><textarea class="edit-cell" rows="3" onchange="editingQuestions[${i}].option_a=this.value">${esc(q.option_a||'')}</textarea></td>
@@ -3915,9 +4183,35 @@ function renderEditTable() {
           ${['A','B','C','D'].map(l=>`<option ${(q.answer||'').toUpperCase()===l?'selected':''}>${l}</option>`).join('')}
         </select>
       </td>
-      <td style="text-align:center;"><button class="btn btn-sm btn-danger" onclick="deleteEditRow(${i})" title="Delete question"><i class="fas fa-trash"></i></button></td>
-    </tr>
-  `).join('');
+      <td style="text-align:center;">
+        <button class="lock-btn ${isLocked?'locked':'unlocked'}" onclick="toggleEditRowLock(${i})" title="${lockTitle}">
+          <i class="fas ${lockIcon}"></i>
+        </button>
+      </td>
+      <td style="text-align:center;">
+        <button class="btn btn-sm btn-danger" onclick="deleteEditRow(${i})" title="Delete question"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+  updateEditLockSummary();
+}
+
+function toggleEditRowLock(i) {
+  editingQuestions[i].locked = !editingQuestions[i].locked;
+  renderEditTable();
+}
+
+function setEditAllLock(locked) {
+  editingQuestions.forEach(q => q.locked = locked);
+  renderEditTable();
+}
+
+function updateEditLockSummary() {
+  const el = document.getElementById('editLockSummary');
+  if (!el || !editingQuestions.length) return;
+  const lockedCount = editingQuestions.filter(q => q.locked).length;
+  const freeCount = editingQuestions.length - lockedCount;
+  el.innerHTML = `<i class="fas fa-unlock" style="color:var(--kerala-green)"></i> ${freeCount} free &nbsp; <i class="fas fa-lock" style="color:#E65100"></i> ${lockedCount} locked`;
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -4106,17 +4400,40 @@ async function uploadCSVToFirebase() {
   parsedCSV = getMergedCSV();
   if (!parsedCSV.length) { showToast('Please upload at least one CSV file first.'); return; }
   if (!db) { showToast('Firebase not configured!'); return; }
-  const paperId = 'paper_' + Date.now();
+
   const mainCat = document.getElementById('uploadMainCat').value;
   const subCat = document.getElementById('uploadSubCat').value;
-  if (!mainCat) { showToast('Please select a Main Category.'); return; }
-  const category = subCat ? subCat : mainCat;
+
+  // Mandatory field validation
+  if (!mainCat) {
+    document.getElementById('uploadMainCat').style.borderColor = 'var(--kerala-red)';
+    showUploadStatus('error', '<i class="fas fa-exclamation-circle"></i> Main Category is required.');
+    document.getElementById('uploadMainCat').focus();
+    return;
+  }
+  document.getElementById('uploadMainCat').style.borderColor = '';
+
+  if (!subCat) {
+    document.getElementById('uploadSubCat').style.borderColor = 'var(--kerala-red)';
+    showUploadStatus('error', '<i class="fas fa-exclamation-circle"></i> Sub-category is required. Please add sub-categories via Category Manager first.');
+    document.getElementById('uploadSubCat').focus();
+    return;
+  }
+  document.getElementById('uploadSubCat').style.borderColor = '';
+
+  // Show uploading state
+  const btn = document.getElementById('uploadToDbBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
+  showUploadStatus('uploading', '<i class="fas fa-spinner fa-spin"></i> Uploading questions to database, please wait…');
+
+  const paperId = 'paper_' + Date.now();
+  const category = subCat;
   const mainCategory = mainCat;
   const duration = document.getElementById('uploadDuration').value;
   const price = parseFloat(document.getElementById('uploadPrice').value) || 0;
   const freeCount = parsedCSV.filter(q => !q._locked).length;
   const lockedCount = parsedCSV.filter(q => q._locked).length;
-
   const autoTitle = [mainCat, subCat].filter(Boolean).join(' – ');
   const paperMeta = {
     id: paperId, title: autoTitle, category, mainCategory, duration: parseInt(duration),
@@ -4142,14 +4459,37 @@ async function uploadCSVToFirebase() {
     });
     await batch.commit();
     examPapers.push(paperMeta);
-    showToast('✅ Questions uploaded successfully!');
+
+    // Success state
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload to Database';
+    showUploadStatus('success', `<i class="fas fa-check-circle"></i> ${parsedCSV.length} questions uploaded successfully! Paper: <strong>${autoTitle}</strong>`);
+
     document.getElementById('csvPreview').style.display = 'none';
     parsedCSV = []; parsedCSV_EN = []; parsedCSV_ML = [];
     document.getElementById('enFileLabel').textContent = '';
     document.getElementById('mlFileLabel').textContent = '';
     document.getElementById('dropZoneEN').style.borderColor = '';
     document.getElementById('dropZoneML').style.borderColor = '';
-  } catch(e) { showToast('Upload failed: ' + e.message); }
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload to Database';
+    showUploadStatus('error', '<i class="fas fa-times-circle"></i> Upload failed: ' + e.message);
+  }
+}
+
+function showUploadStatus(type, html) {
+  const el = document.getElementById('uploadStatusMsg');
+  if (!el) return;
+  el.style.display = 'block';
+  const colors = {
+    uploading: { color: 'var(--kerala-dark)', bg: '#EEF3FF', border: 'var(--border)' },
+    success:   { color: 'var(--kerala-green)', bg: '#E8F5EE', border: '#81C784' },
+    error:     { color: 'var(--kerala-red)', bg: '#FFF0EE', border: '#FFCDD2' }
+  };
+  const c = colors[type] || colors.uploading;
+  el.style.cssText = `display:block;margin-top:10px;font-size:13px;font-weight:600;padding:10px 14px;border-radius:8px;border:1.5px solid ${c.border};background:${c.bg};color:${c.color};`;
+  el.innerHTML = html;
 }
 
 function downloadSampleCSV(lang) {
@@ -5370,8 +5710,587 @@ async function init() {
   await loadFavorites();
   renderHomeGrid();
   document.getElementById('statUsers').textContent = '—';
+  loadNoticeBoard();
+  loadNotificationCounts();
+  loadDynamicPlanPricing();
 }
 init();
+
+// ══════════════════════════════════════════════
+// ─── NOTICE BOARD ─────────────────────────────
+// ══════════════════════════════════════════════
+
+let noticeBoardCache = [];
+
+async function loadNoticeBoard() {
+  const wrap = document.getElementById('noticeBoardWrap');
+  if (!wrap) return;
+  if (!db) { wrap.style.display = 'none'; return; }
+  try {
+    const snap = await db.collection('adminNotices')
+      .orderBy('createdAt', 'desc').limit(10).get();
+    if (snap.empty) { wrap.style.display = 'none'; return; }
+    noticeBoardCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderNoticeBoardUI();
+  } catch(e) { wrap.style.display = 'none'; }
+}
+
+function renderNoticeBoardUI() {
+  const wrap = document.getElementById('noticeBoardWrap');
+  if (!wrap || !noticeBoardCache.length) { if(wrap) wrap.style.display='none'; return; }
+  const items = noticeBoardCache.map(n => {
+    const ts = n.createdAt?.toDate ? n.createdAt.toDate() : (n.createdAt ? new Date(n.createdAt) : null);
+    const timeStr = ts ? ts.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="notice-item">
+      <div class="notice-dot"></div>
+      <div style="flex:1">
+        <div class="notice-msg">${escapeHtml(n.message)}</div>
+        <div class="notice-time">${timeStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = `<div class="notice-board">
+    <div class="notice-board-header">
+      <span class="notice-icon">📋</span>
+      <span>Notice Board</span>
+      <span class="notice-count">${noticeBoardCache.length} notice${noticeBoardCache.length>1?'s':''}</span>
+    </div>
+    ${items}
+  </div>`;
+  wrap.style.display = 'block';
+}
+
+function escapeHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── ADMIN: POST NOTICE ───────────────────────
+async function postAdminNotice() {
+  const msg = (document.getElementById('adminNoticeMsg')?.value || '').trim();
+  if (!msg) { showToast('Please type a message.'); return; }
+  if (!db) { showToast('Database not connected.'); return; }
+  try {
+    await db.collection('adminNotices').add({
+      message: msg,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      postedBy: currentUser?.email || 'admin'
+    });
+    document.getElementById('adminNoticeMsg').value = '';
+    showToast('✅ Notice posted successfully!');
+    loadAdminNotices();
+    loadNoticeBoard();
+    loadNotificationCounts();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function loadAdminNotices() {
+  const list = document.getElementById('adminNoticesList');
+  if (!list || !db) return;
+  list.innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+  try {
+    const snap = await db.collection('adminNotices').orderBy('createdAt','desc').limit(30).get();
+    if (snap.empty) { list.innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:20px;">No notices posted yet.</div>'; return; }
+    list.innerHTML = snap.docs.map(doc => {
+      const n = doc.data();
+      const ts = n.createdAt?.toDate ? n.createdAt.toDate() : null;
+      const dateStr = ts ? ts.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+      return `<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+        <div style="flex:1;">
+          <div style="font-size:14px;color:var(--kerala-dark);line-height:1.6;">${escapeHtml(n.message)}</div>
+          <div style="font-size:11px;color:#aaa;margin-top:3px;">Posted: ${dateStr} &nbsp;·&nbsp; By: ${n.postedBy||'admin'}</div>
+        </div>
+        <button class="btn btn-sm" style="background:#FFF0EE;color:var(--kerala-red);border:1.5px solid #FFCDD2;flex-shrink:0;" onclick="deleteNotice('${doc.id}')"><i class="fas fa-trash"></i></button>
+      </div>`;
+    }).join('');
+  } catch(e) { list.innerHTML = `<div style="color:var(--kerala-red);font-size:13px;padding:16px;">${e.message}</div>`; }
+}
+
+async function deleteNotice(id) {
+  if (!confirm('Delete this notice?')) return;
+  try {
+    await db.collection('adminNotices').doc(id).delete();
+    showToast('Notice deleted.');
+    loadAdminNotices();
+    loadNoticeBoard();
+    loadNotificationCounts();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+// ══════════════════════════════════════════════
+// ─── NOTIFICATION COUNTS ──────────────────────
+// ══════════════════════════════════════════════
+
+// ── Notification badge system ──────────────────
+// localStorage stores the count the user last READ (opened notice board).
+// Badge = total notices - last read count. Only clears when notice board is opened.
+
+function getSeenCount(tabKey) {
+  return parseInt(localStorage.getItem('notif_seen_' + tabKey) || '0', 10);
+}
+function setSeenCount(tabKey, count) {
+  localStorage.setItem('notif_seen_' + tabKey, count);
+}
+
+async function loadNotificationCounts() {
+  if (!db) return;
+  try {
+    const noticeSnap = await db.collection('adminNotices').get();
+    const noticeCount = noticeSnap.size;
+    const seenNotices = getSeenCount('exams');
+    setNotifBadge('notifBadgeExams', Math.max(0, noticeCount - seenNotices));
+
+    const now = new Date();
+    const meSnap = await db.collection('massExams').where('endTime', '>', now).get();
+    const massCount = meSnap.size;
+    const seenMass = getSeenCount('massexam');
+    setNotifBadge('notifBadgeMass', Math.max(0, massCount - seenMass));
+  } catch(e) {}
+}
+
+function setNotifBadge(id, count) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (count > 0) {
+    el.textContent = count > 99 ? '99+' : count;
+    el.style.display = 'inline-flex';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// Called when user opens the tab — saves current total as "seen" and hides badge
+async function clearNotifBadge(tabKey, badgeId) {
+  setNotifBadge(badgeId, 0);
+  if (!db) return;
+  try {
+    if (tabKey === 'exams') {
+      const snap = await db.collection('adminNotices').get();
+      setSeenCount('exams', snap.size);
+    } else if (tabKey === 'massexam') {
+      const now = new Date();
+      const snap = await db.collection('massExams').where('endTime', '>', now).get();
+      setSeenCount('massexam', snap.size);
+    }
+  } catch(e) {}
+}
+
+// showPage extended above — notice board + badge logic merged into original
+
+// ══════════════════════════════════════════════
+// ─── PLAN PRICING MANAGER ─────────────────────
+// ══════════════════════════════════════════════
+
+// Default pricing (matches hardcoded UI)
+let planPricingConfig = {
+  global: [ {months: 6, amount: 300}, {months: 12, amount: 600} ],
+  categories: {} // { 'Account Test': [{months:3,amount:100},{months:12,amount:200}] }
+};
+
+let dynamicPlanPricing = null; // loaded from Firestore
+
+async function loadDynamicPlanPricing() {
+  if (!db) return;
+  try {
+    const doc = await db.collection('config').doc('planPricing').get();
+    if (doc.exists) {
+      dynamicPlanPricing = doc.data();
+      applyDynamicPricing();
+    }
+  } catch(e) {}
+}
+
+function applyDynamicPricing() {
+  if (!dynamicPlanPricing) return;
+  const now = Date.now();
+  // Only apply if effectiveFrom has passed
+  const ef = dynamicPlanPricing.effectiveFrom?.toMillis
+    ? dynamicPlanPricing.effectiveFrom.toMillis()
+    : (dynamicPlanPricing.effectiveFrom ? new Date(dynamicPlanPricing.effectiveFrom).getTime() : 0);
+  if (ef > now) return; // Not yet effective
+
+  // Apply global pricing to plan page cards
+  if (dynamicPlanPricing.global) {
+    planPricingConfig.global = dynamicPlanPricing.global;
+    // Update the visible plan cards
+    const card6 = document.querySelector('#globalPlan6mStatus')?.closest('.plan-card');
+    const card12 = document.querySelector('#globalPlan12mStatus')?.closest('.plan-card');
+    if (dynamicPlanPricing.global.length >= 1 && card6) {
+      const p = dynamicPlanPricing.global[0];
+      const priceEl = card6.querySelector('.plan-price');
+      if (priceEl) priceEl.innerHTML = `<sup>₹</sup>${p.amount} <span>/ ${p.months} months</span>`;
+      const btn = card6.querySelector('.btn');
+      if (btn) {
+        btn.onclick = () => purchaseGlobalPlan(p.months, p.amount);
+        btn.innerHTML = `<i class="fas fa-credit-card"></i> Subscribe – ₹${p.amount}`;
+      }
+    }
+    if (dynamicPlanPricing.global.length >= 2 && card12) {
+      const p = dynamicPlanPricing.global[1];
+      const priceEl = card12.querySelector('.plan-price');
+      if (priceEl) priceEl.innerHTML = `<sup>₹</sup>${p.amount} <span>/ ${p.months} months</span>`;
+      const btn = card12.querySelector('.btn');
+      if (btn) {
+        btn.onclick = () => purchaseGlobalPlan(p.months, p.amount);
+        btn.innerHTML = `<i class="fas fa-crown"></i> Subscribe – ₹${p.amount}`;
+      }
+    }
+  }
+  if (dynamicPlanPricing.categories) {
+    planPricingConfig.categories = dynamicPlanPricing.categories;
+  }
+}
+
+// ─── Admin: Populate Plan Pricing Panel ───────
+function initPlanPricingAdmin() {
+  // Populate category select
+  const sel = document.getElementById('pricingCatSelect');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select Category —</option>' +
+    MAIN_CATEGORIES.map(c => `<option value="${escapeHtml(c)}">${c}</option>`).join('');
+
+  // Set today as default from date
+  const dateInput = document.getElementById('pricingFromDate');
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+
+  renderGlobalPricingRows();
+  loadCurrentPricingPreview();
+}
+
+function renderGlobalPricingRows() {
+  const container = document.getElementById('globalPricingRows');
+  if (!container) return;
+  const rows = planPricingConfig.global;
+  container.innerHTML = rows.map((row, i) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;" id="globalPricingRow${i}">
+      <div>
+        <label class="form-label">Duration (months)</label>
+        <input class="form-input" type="number" min="1" value="${row.months}" id="gMonths${i}" placeholder="e.g. 6">
+      </div>
+      <div>
+        <label class="form-label">Amount (₹)</label>
+        <input class="form-input" type="number" min="0" value="${row.amount}" id="gAmount${i}" placeholder="e.g. 300">
+      </div>
+      <div style="padding-top:22px;">
+        <button class="btn btn-sm" style="background:#FFF0EE;color:var(--kerala-red);border:1.5px solid #FFCDD2;" onclick="removeGlobalPricingRow(${i})"><i class="fas fa-times"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function addGlobalPricingRow() {
+  planPricingConfig.global.push({ months: 3, amount: 150 });
+  renderGlobalPricingRows();
+}
+
+function removeGlobalPricingRow(i) {
+  planPricingConfig.global.splice(i, 1);
+  renderGlobalPricingRows();
+}
+
+function loadCatPricingRows() {
+  const cat = document.getElementById('pricingCatSelect')?.value;
+  const container = document.getElementById('catPricingRows');
+  const addBtn = document.getElementById('addCatPricingBtn');
+  if (!container) return;
+  if (!cat) { container.innerHTML = ''; if(addBtn) addBtn.style.display='none'; return; }
+  if(addBtn) addBtn.style.display = 'inline-flex';
+  if (!planPricingConfig.categories[cat]) planPricingConfig.categories[cat] = [{months:3,amount:100},{months:12,amount:200}];
+  const rows = planPricingConfig.categories[cat];
+  container.innerHTML = rows.map((row, i) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;" id="catPricingRow${i}">
+      <div>
+        <label class="form-label">Duration (months)</label>
+        <input class="form-input" type="number" min="1" value="${row.months}" id="cMonths${i}" placeholder="e.g. 3">
+      </div>
+      <div>
+        <label class="form-label">Amount (₹)</label>
+        <input class="form-input" type="number" min="0" value="${row.amount}" id="cAmount${i}" placeholder="e.g. 100">
+      </div>
+      <div style="padding-top:22px;">
+        <button class="btn btn-sm" style="background:#FFF0EE;color:var(--kerala-red);border:1.5px solid #FFCDD2;" onclick="removeCatPricingRow(${i})"><i class="fas fa-times"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function addCatPricingRow() {
+  const cat = document.getElementById('pricingCatSelect')?.value;
+  if (!cat) return;
+  if (!planPricingConfig.categories[cat]) planPricingConfig.categories[cat] = [];
+  planPricingConfig.categories[cat].push({ months: 1, amount: 50 });
+  loadCatPricingRows();
+}
+
+function removeCatPricingRow(i) {
+  const cat = document.getElementById('pricingCatSelect')?.value;
+  if (!cat || !planPricingConfig.categories[cat]) return;
+  planPricingConfig.categories[cat].splice(i, 1);
+  loadCatPricingRows();
+}
+
+async function savePlanPricing() {
+  if (!db) { showToast('Database not connected.'); return; }
+
+  // Collect global pricing from inputs
+  const globalRows = [];
+  planPricingConfig.global.forEach((_, i) => {
+    const m = parseInt(document.getElementById('gMonths' + i)?.value);
+    const a = parseInt(document.getElementById('gAmount' + i)?.value);
+    if (m > 0 && a >= 0) globalRows.push({ months: m, amount: a });
+  });
+
+  // Collect category pricing from inputs (for currently selected category)
+  const cat = document.getElementById('pricingCatSelect')?.value;
+  if (cat && planPricingConfig.categories[cat]) {
+    const catRows = [];
+    planPricingConfig.categories[cat].forEach((_, i) => {
+      const m = parseInt(document.getElementById('cMonths' + i)?.value);
+      const a = parseInt(document.getElementById('cAmount' + i)?.value);
+      if (m > 0 && a >= 0) catRows.push({ months: m, amount: a });
+    });
+    planPricingConfig.categories[cat] = catRows;
+  }
+  planPricingConfig.global = globalRows;
+
+  const fromDateVal = document.getElementById('pricingFromDate')?.value;
+  const fromDate = fromDateVal ? new Date(fromDateVal) : new Date();
+
+  try {
+    await db.collection('config').doc('planPricing').set({
+      global: planPricingConfig.global,
+      categories: planPricingConfig.categories,
+      effectiveFrom: fromDate,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: currentUser?.email || 'admin'
+    });
+    showToast('✅ Plan pricing saved! Effective from ' + fromDate.toLocaleDateString('en-IN'));
+    loadCurrentPricingPreview();
+    loadDynamicPlanPricing();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function loadCurrentPricingPreview() {
+  const el = document.getElementById('currentPricingPreview');
+  if (!el || !db) return;
+  try {
+    const doc = await db.collection('config').doc('planPricing').get();
+    if (!doc.exists) { el.innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:16px;">No custom pricing set. Default pricing applies.</div>'; return; }
+    const d = doc.data();
+    const ef = d.effectiveFrom?.toDate ? d.effectiveFrom.toDate() : (d.effectiveFrom ? new Date(d.effectiveFrom) : null);
+    const efStr = ef ? ef.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : 'Immediately';
+    const isActive = !ef || ef <= new Date();
+    const statusBadge = isActive
+      ? '<span style="background:#E8F5EE;color:var(--kerala-green);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">✅ Active</span>'
+      : `<span style="background:#FFF8E7;color:#8A6A00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">⏳ Effective from ${efStr}</span>`;
+
+    let html = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <span style="font-size:13px;font-weight:600;color:var(--kerala-dark);">Effective From: ${efStr}</span>
+      ${statusBadge}
+    </div>`;
+
+    // Global
+    if (d.global?.length) {
+      html += `<div style="font-size:13px;font-weight:700;color:var(--kerala-dark);margin-bottom:6px;">All Categories Plans:</div>`;
+      html += d.global.map(p => `<div style="font-size:13px;padding:4px 0;color:#555;"> &nbsp;• ${p.months} months → ₹${p.amount}</div>`).join('');
+    }
+    // Categories
+    if (d.categories && Object.keys(d.categories).length) {
+      html += `<div style="font-size:13px;font-weight:700;color:var(--kerala-dark);margin-top:12px;margin-bottom:6px;">Category Plans:</div>`;
+      Object.entries(d.categories).forEach(([cat, rows]) => {
+        html += `<div style="font-size:13px;color:var(--kerala-dark);font-weight:600;margin-top:6px;">${cat}:</div>`;
+        html += (rows||[]).map(p => `<div style="font-size:13px;padding:2px 0;color:#555;"> &nbsp;• ${p.months} months → ₹${p.amount}</div>`).join('');
+      });
+    }
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = `<div style="color:var(--kerala-red);font-size:13px;">${e.message}</div>`; }
+}
+
+// ══════════════════════════════════════════════
+// ─── PROMO CODES ──────────────────────────────
+// ══════════════════════════════════════════════
+
+function genPromoCode(type) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const code = Array.from({length:8}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+  const el = document.getElementById(type === 'ind' ? 'promoCodeInd' : 'promoCodeGen');
+  if (el) el.value = code;
+}
+
+async function issueIndividualPromo() {
+  const mobile = (document.getElementById('promoMobile')?.value || '').trim();
+  const code = (document.getElementById('promoCodeInd')?.value || '').trim().toUpperCase();
+  const discount = parseInt(document.getElementById('promoDiscountInd')?.value || '0');
+  const expiry = document.getElementById('promoExpiryInd')?.value;
+  const maxUses = document.getElementById('promoMaxUsesInd')?.value;
+
+  if (!mobile || mobile.length < 10) { showToast('Enter a valid 10-digit mobile number.'); return; }
+  if (!code) { showToast('Enter a promo code.'); return; }
+  if (!discount || discount < 1 || discount > 100) { showToast('Enter a valid discount (1–100%).'); return; }
+  if (!db) { showToast('Database not connected.'); return; }
+
+  // Look up user by mobile
+  try {
+    const usersSnap = await db.collection('users').where('phone', '==', mobile).limit(1).get();
+    const userId = usersSnap.empty ? null : usersSnap.docs[0].id;
+    const userName = usersSnap.empty ? null : (usersSnap.docs[0].data().name || mobile);
+
+    await db.collection('promoCodes').doc(code).set({
+      code,
+      type: 'individual',
+      mobile,
+      userId: userId || null,
+      userName: userName || mobile,
+      discount,
+      expiryDate: expiry ? new Date(expiry) : null,
+      maxUses: maxUses ? parseInt(maxUses) : null,
+      usedCount: 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: currentUser?.email || 'admin',
+      active: true
+    });
+    showToast(`✅ Promo code "${code}" issued to ${userName || mobile} (${discount}% off)!`);
+    document.getElementById('promoMobile').value = '';
+    document.getElementById('promoCodeInd').value = '';
+    document.getElementById('promoDiscountInd').value = '';
+    document.getElementById('promoExpiryInd').value = '';
+    document.getElementById('promoMaxUsesInd').value = '';
+    loadPromoCodes();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function issueGeneralPromo() {
+  const code = (document.getElementById('promoCodeGen')?.value || '').trim().toUpperCase();
+  const discount = parseInt(document.getElementById('promoDiscountGen')?.value || '0');
+  const expiry = document.getElementById('promoExpiryGen')?.value;
+  const maxPerUser = parseInt(document.getElementById('promoMaxPerUserGen')?.value || '1');
+  const totalMax = document.getElementById('promoTotalMaxGen')?.value;
+
+  if (!code) { showToast('Enter a promo code.'); return; }
+  if (!discount || discount < 1 || discount > 100) { showToast('Enter a valid discount (1–100%).'); return; }
+  if (!db) { showToast('Database not connected.'); return; }
+
+  try {
+    await db.collection('promoCodes').doc(code).set({
+      code,
+      type: 'general',
+      mobile: null,
+      userId: null,
+      userName: 'All Users',
+      discount,
+      maxPerUser: maxPerUser || 1,
+      expiryDate: expiry ? new Date(expiry) : null,
+      maxUses: totalMax ? parseInt(totalMax) : null,
+      usedCount: 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: currentUser?.email || 'admin',
+      active: true
+    });
+    showToast(`✅ General promo code "${code}" issued (${discount}% off for all users)!`);
+    document.getElementById('promoCodeGen').value = '';
+    document.getElementById('promoDiscountGen').value = '';
+    document.getElementById('promoExpiryGen').value = '';
+    document.getElementById('promoTotalMaxGen').value = '';
+    loadPromoCodes();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function loadPromoCodes() {
+  const tbody = document.getElementById('promoCodesTable');
+  if (!tbody || !db) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
+  try {
+    const snap = await db.collection('promoCodes').orderBy('createdAt','desc').limit(50).get();
+    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;">No promo codes yet.</td></tr>'; return; }
+    tbody.innerHTML = snap.docs.map(doc => {
+      const p = doc.data();
+      const now = new Date();
+      const expDate = p.expiryDate?.toDate ? p.expiryDate.toDate() : (p.expiryDate ? new Date(p.expiryDate) : null);
+      const isExpired = expDate && expDate < now;
+      const isMaxed = p.maxUses && p.usedCount >= p.maxUses;
+      const status = !p.active ? 'Disabled' : isExpired ? 'Expired' : isMaxed ? 'Exhausted' : 'Active';
+      const statusColor = status === 'Active' ? 'var(--kerala-green)' : status === 'Expired' ? '#aaa' : 'var(--kerala-red)';
+      const typeLabel = p.type === 'individual'
+        ? `<span class="badge badge-blue">Individual</span>`
+        : `<span class="badge badge-green">General</span>`;
+      const expiryStr = expDate ? expDate.toLocaleDateString('en-IN') : '—';
+      const usesStr = `${p.usedCount||0} / ${p.maxUses || '∞'}`;
+      return `<tr>
+        <td style="font-weight:800;font-family:monospace;font-size:13px;letter-spacing:1px;">${p.code}</td>
+        <td>${typeLabel}</td>
+        <td style="font-size:12px;">${escapeHtml(p.userName||'—')}<br><span style="color:#aaa;font-size:11px;">${p.mobile||''}</span></td>
+        <td style="font-weight:700;color:var(--kerala-dark);">${p.discount}%</td>
+        <td style="font-size:12px;">${usesStr}</td>
+        <td style="font-size:12px;">${expiryStr}</td>
+        <td><span style="color:${statusColor};font-weight:700;font-size:12px;">${status}</span></td>
+        <td>
+          ${p.active && status === 'Active' ? `<button class="btn btn-sm" style="background:#FFF0EE;color:var(--kerala-red);border:1.5px solid #FFCDD2;" onclick="disablePromoCode('${doc.id}')"><i class="fas fa-ban"></i></button>` : ''}
+          <button class="btn btn-sm" style="background:#FFF0EE;color:var(--kerala-red);border:1.5px solid #FFCDD2;margin-left:4px;" onclick="deletePromoCode('${doc.id}')"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="8" style="color:var(--kerala-red);padding:16px;">${e.message}</td></tr>`; }
+}
+
+async function disablePromoCode(id) {
+  try {
+    await db.collection('promoCodes').doc(id).update({ active: false });
+    showToast('Promo code disabled.');
+    loadPromoCodes();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function deletePromoCode(id) {
+  if (!confirm('Delete this promo code?')) return;
+  try {
+    await db.collection('promoCodes').doc(id).delete();
+    showToast('Promo code deleted.');
+    loadPromoCodes();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+// ─── USER: Apply Promo Code on Plan page ──────
+let appliedPromo = null;
+
+async function applyPromoCode() {
+  const code = (document.getElementById('userPromoInput')?.value || '').trim().toUpperCase();
+  const resultEl = document.getElementById('promoApplyResult');
+  if (!code) { if(resultEl) resultEl.innerHTML = '<span style="color:var(--kerala-red);">Please enter a code.</span>'; return; }
+  if (!db) { if(resultEl) resultEl.innerHTML = '<span style="color:var(--kerala-red);">Database not connected.</span>'; return; }
+  if (!currentUser) { openAuth(); return; }
+
+  try {
+    const doc = await db.collection('promoCodes').doc(code).get();
+    if (!doc.exists) {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--kerala-red);">❌ Invalid promo code.</span>';
+      return;
+    }
+    const p = doc.data();
+    const now = new Date();
+    const expDate = p.expiryDate?.toDate ? p.expiryDate.toDate() : (p.expiryDate ? new Date(p.expiryDate) : null);
+
+    if (!p.active) { if(resultEl) resultEl.innerHTML = '<span style="color:var(--kerala-red);">❌ This promo code is no longer active.</span>'; return; }
+    if (expDate && expDate < now) { if(resultEl) resultEl.innerHTML = '<span style="color:var(--kerala-red);">❌ This promo code has expired.</span>'; return; }
+    if (p.maxUses && p.usedCount >= p.maxUses) { if(resultEl) resultEl.innerHTML = '<span style="color:var(--kerala-red);">❌ This promo code has been fully used.</span>'; return; }
+
+    // Check individual restriction
+    if (p.type === 'individual') {
+      const userSnap = await db.collection('users').doc(currentUser.uid).get();
+      const phone = userSnap.data()?.phone;
+      if (p.mobile && phone !== p.mobile && p.userId !== currentUser.uid) {
+        if(resultEl) resultEl.innerHTML = '<span style="color:var(--kerala-red);">❌ This code is not valid for your account.</span>';
+        return;
+      }
+    }
+
+    appliedPromo = { code, discount: p.discount, docId: doc.id };
+    if(resultEl) resultEl.innerHTML = `<span style="color:var(--kerala-green);">✅ Promo code applied! You get <strong>${p.discount}% discount</strong> on your next purchase.</span>`;
+    showToast(`🎉 Promo "${code}" applied — ${p.discount}% off!`);
+  } catch(e) {
+    if(resultEl) resultEl.innerHTML = `<span style="color:var(--kerala-red);">Error: ${e.message}</span>`;
+  }
+}
+
+// purchaseGlobalPlan updated above with promo code support
+
+// showAdminPanel extended above with new panel hooks
 </script>
 </body>
 </html>
