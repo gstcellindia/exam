@@ -1311,6 +1311,26 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
               </span>
             </div>
           </div>
+          <!-- Row 1b: 2nd Sub-category + Date of Test -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;">
+            <div>
+              <label class="form-label"><i class="fas fa-tags" style="color:var(--kerala-gold)"></i> 2nd Sub-category <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+              <input class="form-input" type="text" id="uploadSub2" placeholder="e.g. KFC Part I &amp; II and KBM">
+            </div>
+            <div>
+              <label class="form-label"><i class="fas fa-calendar-alt" style="color:var(--kerala-mid)"></i> Date of Test</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <select id="uploadMonth" class="form-input">
+                  <option value="">— Month —</option>
+                  <option>January</option><option>February</option><option>March</option>
+                  <option>April</option><option>May</option><option>June</option>
+                  <option>July</option><option>August</option><option>September</option>
+                  <option>October</option><option>November</option><option>December</option>
+                </select>
+                <input class="form-input" type="number" id="uploadYear" placeholder="Year e.g. 2025" min="2000" max="2099">
+              </div>
+            </div>
+          </div>
           <!-- Row 2: Duration | Price | Free Preview -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;align-items:start;">
             <div>
@@ -1891,6 +1911,26 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
           <select id="editSubCat" class="form-input" style="font-size:13px;padding:9px 10px;" disabled>
             <option value="">— Select Main Category first —</option>
           </select>
+        </div>
+      </div>
+      <!-- Row 1b: 2nd Sub-category + Date of Test -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;align-items:start;">
+        <div>
+          <label class="form-label"><i class="fas fa-tags" style="color:var(--kerala-gold)"></i> 2nd Sub-category <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+          <input class="form-input" type="text" id="editSub2" placeholder="e.g. KFC Part I &amp; II and KBM" style="font-size:13px;">
+        </div>
+        <div>
+          <label class="form-label"><i class="fas fa-calendar-alt" style="color:var(--kerala-mid)"></i> Date of Test</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <select id="editMonth" class="form-input" style="font-size:13px;padding:9px 10px;">
+              <option value="">— Month —</option>
+              <option>January</option><option>February</option><option>March</option>
+              <option>April</option><option>May</option><option>June</option>
+              <option>July</option><option>August</option><option>September</option>
+              <option>October</option><option>November</option><option>December</option>
+            </select>
+            <input class="form-input" type="number" id="editYear" placeholder="Year" min="2000" max="2099" style="font-size:13px;">
+          </div>
         </div>
       </div>
       <!-- Row 2: Duration | Questions | Price -->
@@ -2679,9 +2719,15 @@ async function openEditPaper(paperId) {
   // 2. Sub-category (load options then preselect)
   await loadSubCats('editMainCat', 'editSubCat', paper.category !== paper.mainCategory ? paper.category : '');
 
-  // 3. Numeric fields
+  // 3. Numeric fields + sub2/date
   document.getElementById('editDuration').value = paper.duration || '';
   document.getElementById('editPrice').value = paper.price !== undefined ? paper.price : 0;
+  document.getElementById('editSub2').value = paper.sub2 || '';
+  document.getElementById('editYear').value = paper.year || '';
+  const editMonthSel = document.getElementById('editMonth');
+  for (let i = 0; i < editMonthSel.options.length; i++) {
+    if (editMonthSel.options[i].value === (paper.month || '')) { editMonthSel.selectedIndex = i; break; }
+  }
 
   // 4. Also try to load from Firestore if paper was uploaded
   if (db) {
@@ -2700,6 +2746,11 @@ async function openEditPaper(paperId) {
         await loadSubCats('editMainCat', 'editSubCat', d.category !== d.mainCategory ? d.category : '');
         document.getElementById('editDuration').value = d.duration || '';
         document.getElementById('editPrice').value = d.price !== undefined ? d.price : 0;
+        document.getElementById('editSub2').value = d.sub2 || '';
+        document.getElementById('editYear').value = d.year || '';
+        for (let i = 0; i < editMonthSel.options.length; i++) {
+          if (editMonthSel.options[i].value === (d.month || '')) { editMonthSel.selectedIndex = i; break; }
+        }
       }
       const snap = await db.collection('papers').doc(paperId).collection('questions').orderBy('q_no').get();
       editingQuestions = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
@@ -2787,6 +2838,9 @@ async function saveEditedPaper() {
     // Collect updated metadata
     const mainCat = document.getElementById('editMainCat').value;
     const subCat = document.getElementById('editSubCat').value;
+    const sub2 = (document.getElementById('editSub2').value || '').trim();
+    const month = document.getElementById('editMonth').value || '';
+    const year = parseInt(document.getElementById('editYear').value) || '';
     const category = subCat ? subCat : mainCat;
     const mainCategory = mainCat;
     const duration = parseInt(document.getElementById('editDuration').value) || 90;
@@ -2798,7 +2852,8 @@ async function saveEditedPaper() {
     const title = [mainCat, subCat].filter(Boolean).join(' – ');
     await db.collection('papers').doc(editingPaperId).update({
       title, category, mainCategory, duration, price,
-      qCount, lockedCount, isLocked: lockedCount > 0
+      qCount, lockedCount, isLocked: lockedCount > 0,
+      sub2, month, year
     });
 
     // Rewrite questions
@@ -2815,7 +2870,7 @@ async function saveEditedPaper() {
     // Update local cache
     const papers = examPapers.length ? examPapers : demoExams;
     const local = papers.find(p => p.id === editingPaperId);
-    if (local) Object.assign(local, { title, category, mainCategory, duration, price, qCount, lockedCount, isLocked: lockedCount > 0 });
+    if (local) Object.assign(local, { title, category, mainCategory, duration, price, qCount, lockedCount, isLocked: lockedCount > 0, sub2, month, year });
 
     showToast('✅ Paper saved successfully!');
     document.getElementById('editModal').style.display = 'none';
@@ -2960,6 +3015,9 @@ async function uploadCSVToFirebase() {
 
   const mainCat = document.getElementById('uploadMainCat').value;
   const subCat = document.getElementById('uploadSubCat').value;
+  const sub2 = (document.getElementById('uploadSub2').value || '').trim();
+  const uploadMonth = document.getElementById('uploadMonth').value || '';
+  const uploadYear = parseInt(document.getElementById('uploadYear').value) || '';
 
   // Mandatory field validation
   if (!mainCat) {
@@ -2996,6 +3054,7 @@ async function uploadCSVToFirebase() {
     id: paperId, title: autoTitle, category, mainCategory, duration: parseInt(duration),
     qCount: parsedCSV.length, hasML: parsedCSV.some(q=>q.question_ml && q.question_ml.trim()),
     price, freeCount, lockedCount, isLocked: lockedCount > 0,
+    sub2, month: uploadMonth, year: uploadYear,
     addedAt: new Date().toLocaleDateString()
   };
   try {
@@ -3080,14 +3139,20 @@ async function deleteExam(id) {
 // ─── CATEGORY MANAGER ─────────────────────────
 // In-memory cache: { 'Account Test': ['KFC Part I', 'KSR', ...], ... }
 let subCatCache = {};
+// 2nd sub-category cache: { 'Account Test': { 'KFC Part I': ['KFC Vol I', ...], ... }, ... }
+let sub2Cache = {};
 
 async function loadSubCatCache() {
   if (!db) return;
   try {
     const snap = await db.collection('subcategories').get();
     subCatCache = {};
-    snap.docs.forEach(d => { subCatCache[d.id] = d.data().list || []; });
-  } catch(e) { subCatCache = {}; }
+    sub2Cache = {};
+    snap.docs.forEach(d => {
+      subCatCache[d.id] = d.data().list || [];
+      sub2Cache[d.id] = d.data().sub2 || {};
+    });
+  } catch(e) { subCatCache = {}; sub2Cache = {}; }
 }
 
 async function loadSubCats(mainSelectId, subSelectId, preselect) {
@@ -3203,14 +3268,35 @@ function renderSubcatPanel(cat) {
   const panel = document.getElementById('subcatPanel');
   const list = subCatCache[cat] || [];
   const icon = CATEGORY_ICONS[cat] || '📄';
+
   const tags = list.length
     ? list.map((s, i) => {
         const ec = cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-        return `<span class="subcat-tag">
-          <span onclick="editSubCatInline('${ec}',${i})" title="Click to rename" style="cursor:pointer;">${s}</span>
-          <button onclick="editSubCatInline('${ec}',${i})" title="Rename" style="color:#888;font-size:11px;padding:0 3px;"><i class="fas fa-pencil-alt"></i></button>
-          <button onclick="removeSubCat('${ec}',${i})" title="Remove">×</button>
-        </span>`;
+        const es = s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        const sub2List = (sub2Cache[cat] && sub2Cache[cat][s]) || [];
+        const sub2Tags = sub2List.map((t, j) =>
+          `<span class="subcat-tag" style="font-size:11px;background:#F5F0FF;color:#5B3FA0;margin-right:3px;">
+            <span>${t}</span>
+            <button onclick="removeSub2('${ec}','${es}',${j})" title="Remove">×</button>
+          </span>`).join('');
+        return `<div style="border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#FAFBFF;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span class="subcat-tag" style="margin:0;">
+              <span onclick="editSubCatInline('${ec}',${i})" title="Click to rename" style="cursor:pointer;">${s}</span>
+              <button onclick="editSubCatInline('${ec}',${i})" title="Rename" style="color:#888;font-size:11px;padding:0 3px;"><i class="fas fa-pencil-alt"></i></button>
+              <button onclick="removeSubCat('${ec}',${i})" title="Remove">×</button>
+            </span>
+          </div>
+          <div style="margin-left:8px;">
+            <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">2nd Sub-categories</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">${sub2Tags || '<span style="font-size:11px;color:#bbb;">None yet</span>'}</div>
+            <div style="display:flex;gap:6px;">
+              <input class="form-input" id="newSub2Input_${i}" placeholder="Add 2nd sub-category…" style="font-size:12px;padding:6px 10px;"
+                onkeydown="if(event.key==='Enter') addSub2('${ec}','${es}',${i})">
+              <button class="btn btn-primary btn-sm" onclick="addSub2('${ec}','${es}',${i})"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
+        </div>`;
       }).join('')
     : `<p style="color:#aaa;font-size:13px;margin:8px 0;">No sub-categories yet. Add one below.</p>`;
 
@@ -3250,13 +3336,13 @@ function renderSubcatPanel(cat) {
     </div>
     <div style="margin-bottom:14px;">${tags}</div>
     <div class="subcat-add-row">
-      <input class="form-input" id="newSubCatInput" placeholder="e.g. Account Test (Higher) – KFC Part I" style="font-size:13px;"
+      <input class="form-input" id="newSubCatInput" placeholder="Add new sub-category…" style="font-size:13px;"
         onkeydown="if(event.key==='Enter') addSubCat('${cat.replace(/'/g,"\\'")}')">
       <button class="btn btn-primary" onclick="addSubCat('${cat.replace(/'/g,"\\'")}')">
-        <i class="fas fa-plus"></i> Add
+        <i class="fas fa-plus"></i> Add Sub-cat
       </button>
     </div>
-    <p style="font-size:11px;color:#aaa;margin-top:8px;"><i class="fas fa-info-circle"></i> Sub-categories appear in Upload &amp; Edit dropdowns under this main category.</p>
+    <p style="font-size:11px;color:#aaa;margin-top:8px;"><i class="fas fa-info-circle"></i> Sub-categories appear in Upload &amp; Edit dropdowns. 2nd sub-categories appear on exam cards.</p>
     ${priceSectionHTML}
   `;
 }
@@ -3271,7 +3357,7 @@ async function addSubCat(cat) {
   input.value = '';
   if (db) {
     try {
-      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat] });
+      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat], sub2: sub2Cache[cat] || {} });
     } catch(e) { showToast('Saved locally only – Firebase error: ' + e.message); }
   }
   loadCategoryManager();
@@ -3280,10 +3366,12 @@ async function addSubCat(cat) {
 
 async function removeSubCat(cat, idx) {
   if (!confirm('Remove this sub-category?')) return;
+  const removed = subCatCache[cat][idx];
   subCatCache[cat].splice(idx, 1);
+  if (sub2Cache[cat]) delete sub2Cache[cat][removed];
   if (db) {
     try {
-      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat] });
+      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat], sub2: sub2Cache[cat] || {} });
     } catch(e) {}
   }
   loadCategoryManager();
@@ -3297,13 +3385,49 @@ async function editSubCatInline(cat, idx) {
   const trimmed = newVal.trim();
   if (subCatCache[cat].includes(trimmed)) { showToast('Name already exists.'); return; }
   subCatCache[cat][idx] = trimmed;
+  // Migrate sub2 entries to new key
+  if (sub2Cache[cat] && sub2Cache[cat][oldVal]) {
+    sub2Cache[cat][trimmed] = sub2Cache[cat][oldVal];
+    delete sub2Cache[cat][oldVal];
+  }
   if (db) {
     try {
-      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat] });
+      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat], sub2: sub2Cache[cat] || {} });
     } catch(e) {}
   }
   loadCategoryManager();
   showToast('✅ Renamed to "' + trimmed + '"');
+}
+
+async function addSub2(cat, subCat, subIdx) {
+  const input = document.getElementById(`newSub2Input_${subIdx}`);
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) { showToast('Please enter a 2nd sub-category name.'); return; }
+  if (!sub2Cache[cat]) sub2Cache[cat] = {};
+  if (!sub2Cache[cat][subCat]) sub2Cache[cat][subCat] = [];
+  if (sub2Cache[cat][subCat].includes(val)) { showToast('Already exists.'); return; }
+  sub2Cache[cat][subCat].push(val);
+  input.value = '';
+  if (db) {
+    try {
+      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat], sub2: sub2Cache[cat] });
+    } catch(e) { showToast('Saved locally only: ' + e.message); }
+  }
+  renderSubcatPanel(cat);
+  showToast(`✅ "${val}" added as 2nd sub-category`);
+}
+
+async function removeSub2(cat, subCat, idx) {
+  if (!sub2Cache[cat] || !sub2Cache[cat][subCat]) return;
+  sub2Cache[cat][subCat].splice(idx, 1);
+  if (db) {
+    try {
+      await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat], sub2: sub2Cache[cat] });
+    } catch(e) {}
+  }
+  renderSubcatPanel(cat);
+  showToast('2nd sub-category removed.');
 }
 
 // ── Admin: Create Mass Exam ──
