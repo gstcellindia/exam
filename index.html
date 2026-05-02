@@ -347,18 +347,14 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 .palette-page-label { font-size: 11px; font-weight: 700; color: #888; }
 
 /* ─── 5-PER-PAGE QUESTION LAYOUT ──────────── */
-.question-page-list { display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px; }
+.question-page-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
 .question-block {
   background: white; border-radius: var(--radius);
-  padding: 24px 28px; box-shadow: var(--shadow);
+  padding: 14px 20px; box-shadow: var(--shadow);
   border: 1px solid var(--border); border-left: 4px solid var(--kerala-dark);
 }
 .question-block.answered { border-left-color: var(--kerala-green); }
-.question-block-num {
-  font-size: 11px; font-weight: 700; color: var(--kerala-gold);
-  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;
-  display: flex; align-items: center; gap: 8px;
-}
+.question-block-num { display: none; }
 .question-block-num .answered-badge {
   background: var(--kerala-green); color: white;
   font-size: 10px; padding: 2px 7px; border-radius: 10px; letter-spacing: .5px;
@@ -366,6 +362,11 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 .question-block-text {
   font-size: 15px; font-weight: 800; color: var(--kerala-dark);
   line-height: 1.6; margin-bottom: 6px;
+}
+.answered-inline-badge {
+  display: inline-block; background: var(--kerala-green); color: white;
+  font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
+  letter-spacing: .5px; vertical-align: middle; margin-left: 6px;
 }
 .question-block-ml {
   font-size: 13px; color: #555; line-height: 1.8; margin-bottom: 16px;
@@ -403,6 +404,22 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
   width: auto; max-width: 200px;
 }
 .page-jump-select:focus { border-color: var(--kerala-dark); }
+
+/* Per-page selector */
+.perpage-wrap {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--bg-body); border: 2px solid var(--border);
+  border-radius: 8px; padding: 4px 4px 4px 10px;
+  font-size: 12px; font-weight: 700; color: #888; flex-shrink: 0;
+}
+.perpage-wrap span { white-space: nowrap; }
+.perpage-select {
+  padding: 3px 6px; border-radius: 6px; border: none;
+  font-size: 13px; font-weight: 700; font-family: inherit;
+  background: var(--kerala-dark); color: white; cursor: pointer;
+  outline: none;
+}
+.perpage-select:focus { box-shadow: 0 0 0 2px rgba(59,89,152,.35); }
 
 /* Question number grid panel */
 .qnum-panel {
@@ -1353,6 +1370,15 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
       <select class="page-jump-select" id="pageJumpSelect" onchange="renderPage(parseInt(this.value))" title="Jump to page">
         <option value="">Page…</option>
       </select>
+      <div class="perpage-wrap" title="Questions per page">
+        <span>Per page:</span>
+        <select class="perpage-select" id="perPageSelect" onchange="changePerPage(parseInt(this.value))">
+          <option value="5" selected>5</option>
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+      </div>
       <button class="page-nav-arrow next" id="btnNextPage" onclick="nextPage()" title="Next page"><i class="fas fa-chevron-right"></i></button>
     </div>
 
@@ -2743,13 +2769,24 @@ async function loadExam(exam, freePreviewOnly) {
   document.getElementById('examMetaDisplay').textContent = `${currentExam.questions.length} Questions · ${exam.duration} min · 1 mark / -0.33`;
 
   currentPage = 0;
+  QS_PER_PAGE = 5;
+  const ppSel = document.getElementById('perPageSelect');
+  if (ppSel) ppSel.value = '5';
   startTimer(exam.duration * 60);
   renderPage(0);
 }
 
-// ─── 5-QUESTIONS-PER-PAGE EXAM ENGINE ────────
-const QS_PER_PAGE = 5;
+// ─── QUESTIONS-PER-PAGE EXAM ENGINE ────────
+let QS_PER_PAGE = 5;
 let currentPage = 0;
+
+function changePerPage(n) {
+  // Calculate which question we're currently looking at (first on current page)
+  const firstQIdx = currentPage * QS_PER_PAGE;
+  QS_PER_PAGE = n;
+  // Jump to the page that contains the first question we were viewing
+  renderPage(Math.floor(firstQIdx / QS_PER_PAGE));
+}
 
 function buildPalette(n) {
   currentPage = 0;
@@ -2792,11 +2829,7 @@ function renderPage(page) {
     }).join('');
 
     return `<div class="question-block ${isAnswered?'answered':''}" id="qblock-${idx}">
-      <div class="question-block-num">
-        Question ${idx+1} of ${total}
-        ${isAnswered ? '<span class="answered-badge">✓ Answered</span>' : ''}
-      </div>
-      <div class="question-block-text">${qText}</div>
+      <div class="question-block-text">${idx+1}. ${qText}${isAnswered ? '<span class="answered-inline-badge">✓</span>' : ''}</div>
       ${qSub ? `<div class="question-block-ml">${qSub}</div>` : ''}
       <div class="options-grid">${optionsHTML}</div>
     </div>`;
@@ -2854,13 +2887,12 @@ function renderQnumGrid(activePage) {
 
 function selectOption(idx, letter) {
   userAnswers[idx] = letter;
-  // Refresh only the changed question block's styling
   const block = document.getElementById('qblock-' + idx);
   if (block) {
     block.classList.add('answered');
-    const numEl = block.querySelector('.question-block-num');
-    if (numEl && !numEl.querySelector('.answered-badge')) {
-      numEl.innerHTML += '<span class="answered-badge">✓ Answered</span>';
+    const textEl = block.querySelector('.question-block-text');
+    if (textEl && !textEl.querySelector('.answered-inline-badge')) {
+      textEl.insertAdjacentHTML('beforeend', '<span class="answered-inline-badge">✓</span>');
     }
     block.querySelectorAll('.option-btn').forEach((btn, i) => {
       btn.className = 'option-btn' + (['A','B','C','D'][i] === letter ? ' selected' : '');
