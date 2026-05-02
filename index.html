@@ -2249,7 +2249,9 @@ async function doLogin() {
   const pass = document.getElementById('loginPassword').value;
   if (!email || !pass) { showAuthError('Please fill all fields.'); return; }
   try {
-    await auth.signInWithEmailAndPassword(email, pass);
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    // Clear any existing local sessionId so a fresh session is registered
+    localStorage.removeItem('exampsc_sid_' + cred.user.uid);
     closeAuth();
   } catch(e) { showAuthError(e.message); }
 }
@@ -2276,6 +2278,8 @@ async function doGoogleLogin() {
   try {
     const result = await auth.signInWithPopup(provider);
     const user = result.user;
+    // Clear any existing local sessionId so a fresh session is registered
+    localStorage.removeItem('exampsc_sid_' + user.uid);
     // Check if new user
     const userRef = db.collection('users').doc(user.uid);
     const snap = await userRef.get();
@@ -2338,8 +2342,16 @@ function confirmLogout() {
   document.getElementById('signOutModal').style.display = 'flex';
 }
 
-function logout() {
+async function logout() {
   document.getElementById('signOutModal').style.display = 'none';
+  // Clear Firestore session first — this signals all other devices to sign out
+  if (currentUser && db) {
+    try {
+      await db.collection('userSessions').doc(currentUser.uid).delete();
+    } catch(e) {}
+    localStorage.removeItem('exampsc_sid_' + currentUser.uid);
+  }
+  stopSessionWatch();
   if (auth) auth.signOut();
   currentUser = null; isAdmin = false;
   document.getElementById('navUser').style.display = 'none';
@@ -4489,5 +4501,218 @@ async function applyPromoCode() {
 }
 
 </script>
+
+<!-- ─── CONCURRENT LOGIN BLOCK SCREEN ─────────────────────────────── -->
+<div id="sessionBlockOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1A2744 0%,#243860 100%);align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:20px;padding:40px 36px;max-width:420px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4);">
+    <div style="width:72px;height:72px;background:#FFF0EE;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px;">⚠️</div>
+    <h2 style="font-size:20px;font-weight:800;color:#1A2744;margin-bottom:10px;">Logged In Elsewhere</h2>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:6px;">Your account is currently active on another device or browser.</p>
+    <p style="font-size:13px;color:#888;margin-bottom:28px;">Only one session is allowed at a time. To continue here, log out from the other device — or change your password to force all sessions to end.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="sessionTakeOver()" class="btn btn-primary" style="width:100%;padding:12px;font-size:14px;">
+        <i class="fas fa-laptop"></i> Use This Device Instead
+      </button>
+      <button onclick="sessionChangePassword()" class="btn btn-outline" style="width:100%;padding:12px;font-size:14px;">
+        <i class="fas fa-key"></i> Change Password (Logs Out All)
+      </button>
+      <button onclick="sessionLogout()" style="background:none;border:none;color:#aaa;font-size:13px;cursor:pointer;padding:8px;">
+        <i class="fas fa-sign-out-alt"></i> Sign Out from This Device
+      </button>
+    </div>
+    <p style="font-size:11px;color:#ccc;margin-top:16px;" id="sessionBlockInfo"></p>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ─── CONCURRENT SESSION CONTROL ────────────────────────────────
+// Prevents the same account being used on two devices/IPs at once.
+// Strategy:
+//   • On login  → generate a sessionId, write to Firestore userSessions/{uid}
+//   • On load   → compare localStorage sessionId with Firestore
+//   • Mismatch  → show block screen (another device took over)
+//   • Logout    → delete Firestore session → all other devices detect & sign out
+//   • Change pw → same effect (Firebase invalidates all tokens)
+// ═══════════════════════════════════════════════════════════════
+
+const SESSION_CHECK_INTERVAL = 20000; // check every 20 seconds
+let _sessionId       = null;   // this device's session token
+let _sessionListener = null;   // Firestore realtime listener
+let _sessionTimer    = null;   // fallback polling timer
+let _sessionBlocked  = false;  // true when block screen is shown
+
+// ── Generate a random session token ──────────────────────────
+function generateSessionId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+
+// ── Write this device's session to Firestore ─────────────────
+async function registerSession(uid) {
+  if (!db) return;
+  _sessionId = generateSessionId();
+  localStorage.setItem('exampsc_sid_' + uid, _sessionId);
+  try {
+    await db.collection('userSessions').doc(uid).set({
+      sessionId:  _sessionId,
+      loginAt:    firebase.firestore.FieldValue.serverTimestamp(),
+      userAgent:  navigator.userAgent.slice(0, 120),
+      uid:        uid
+    });
+  } catch(e) { console.warn('Session register error:', e); }
+}
+
+// ── Start watching for session changes in realtime ────────────
+function startSessionWatch(uid) {
+  if (!db) return;
+  // Load sessionId from localStorage (set at login time)
+  _sessionId = localStorage.getItem('exampsc_sid_' + uid);
+
+  // Use Firestore onSnapshot for instant detection
+  _sessionListener = db.collection('userSessions').doc(uid)
+    .onSnapshot(snap => {
+      if (!snap.exists) {
+        // Session doc deleted = logout triggered from another device
+        if (currentUser) {
+          stopSessionWatch();
+          auth.signOut();
+          showToast('You have been signed out.');
+        }
+        return;
+      }
+      const data = snap.data();
+      if (data.sessionId && _sessionId && data.sessionId !== _sessionId) {
+        // Another device registered a new session — block this one
+        showSessionBlock(data);
+      } else if (_sessionBlocked && data.sessionId === _sessionId) {
+        // This device took over — unblock
+        hideSessionBlock();
+      }
+    }, err => {
+      // onSnapshot failed (e.g. offline) — fall back to polling
+      console.warn('Session watch error, falling back to polling:', err);
+      _sessionTimer = setInterval(() => checkSessionPoll(uid), SESSION_CHECK_INTERVAL);
+    });
+}
+
+// ── Fallback polling (if realtime listener fails) ─────────────
+async function checkSessionPoll(uid) {
+  if (!db || !_sessionId) return;
+  try {
+    const snap = await db.collection('userSessions').doc(uid).get();
+    if (!snap.exists) {
+      stopSessionWatch(); auth.signOut(); return;
+    }
+    const data = snap.data();
+    if (data.sessionId !== _sessionId) showSessionBlock(data);
+    else if (_sessionBlocked) hideSessionBlock();
+  } catch(e) {}
+}
+
+// ── Stop all watchers ─────────────────────────────────────────
+function stopSessionWatch() {
+  if (_sessionListener) { _sessionListener(); _sessionListener = null; }
+  if (_sessionTimer)    { clearInterval(_sessionTimer); _sessionTimer = null; }
+}
+
+// ── Show the block overlay ────────────────────────────────────
+function showSessionBlock(data) {
+  _sessionBlocked = true;
+  const overlay = document.getElementById('sessionBlockOverlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  // Show info about when the other session started
+  const info = document.getElementById('sessionBlockInfo');
+  if (info && data.loginAt) {
+    const t = data.loginAt.toDate ? data.loginAt.toDate() : new Date(data.loginAt);
+    info.textContent = 'Other session started: ' + t.toLocaleString('en-IN');
+  }
+}
+
+// ── Hide the block overlay ────────────────────────────────────
+function hideSessionBlock() {
+  _sessionBlocked = false;
+  const overlay = document.getElementById('sessionBlockOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+// ── "Use This Device" button → take over the session ─────────
+async function sessionTakeOver() {
+  if (!currentUser || !db) return;
+  await registerSession(currentUser.uid);  // overwrites Firestore with new sessionId
+  // Other devices will detect the mismatch and show their block screen
+  hideSessionBlock();
+  showToast('This device is now the active session.');
+}
+
+// ── "Change Password" button from block screen ────────────────
+function sessionChangePassword() {
+  hideSessionBlock();
+  // Open the change-password modal
+  if (typeof openChangePassword === 'function') openChangePassword();
+}
+
+// ── "Sign Out" from block screen ──────────────────────────────
+async function sessionLogout() {
+  if (!currentUser || !db) { auth.signOut(); return; }
+  // Do NOT delete the Firestore session — the other device should keep its session.
+  // Just sign out locally.
+  stopSessionWatch();
+  localStorage.removeItem('exampsc_sid_' + currentUser.uid);
+  await auth.signOut();
+  hideSessionBlock();
+}
+
+// ── Clear session on normal logout (kills all other devices) ──
+async function clearSession(uid) {
+  stopSessionWatch();
+  if (db && uid) {
+    try {
+      await db.collection('userSessions').doc(uid).delete();
+    } catch(e) {}
+  }
+  if (uid) localStorage.removeItem('exampsc_sid_' + uid);
+}
+
+// ── Hook into auth state: register/watch on login, clear on logout ──
+if (auth) {
+  auth.onAuthStateChanged(async function(user) {
+    if (user) {
+      // Register a new session only if no sessionId exists for this device yet
+      const existingSid = localStorage.getItem('exampsc_sid_' + user.uid);
+      if (!existingSid) {
+        await registerSession(user.uid);
+      } else {
+        _sessionId = existingSid;
+      }
+      startSessionWatch(user.uid);
+    } else {
+      // Signed out — stop watching (session doc already deleted by logout())
+      stopSessionWatch();
+      hideSessionBlock();
+    }
+  });
+}
+
+// ── Patch logout() to also clear Firestore session ────────────
+const _origLogout = window.logout;
+window.logout = async function() {
+  const uid = currentUser ? currentUser.uid : null;
+  await clearSession(uid);
+  if (typeof _origLogout === 'function') _origLogout();
+};
+
+// ── When password changes, clear session (all devices sign out) ──
+// doChangePassword already calls updatePassword which invalidates tokens,
+// but we also delete the session doc to be explicit.
+const _origDoChangePassword = window.doChangePassword;
+window.doChangePassword = async function() {
+  if (typeof _origDoChangePassword === 'function') await _origDoChangePassword();
+  // After password change, Firebase signs user out automatically on other devices.
+  // Clear session doc too so the realtime listener triggers logout.
+  if (currentUser) await clearSession(currentUser.uid);
+};
+</script>
+
 </body>
 </html>
