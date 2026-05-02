@@ -1301,13 +1301,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
               <label class="form-label"><i class="fas fa-layer-group" style="color:var(--kerala-gold)"></i> Main Category</label>
               <select id="uploadMainCat" class="form-input" onchange="loadSubCats('uploadMainCat','uploadSubCat')">
                 <option value="">— Select Main Category —</option>
-                <option>Account Test</option><option>Revenue</option><option>Forest</option>
-                <option>Panchayath</option><option>Registration</option><option>Prisons</option>
-                <option>Judiciary</option><option>Social Justice</option><option>KSEB</option>
-                <option>Local Fund Audit</option><option>Motor Vehicles</option><option>Labour</option>
-                <option>Excise</option><option>State Goods &amp; Service Tax (GST)</option><option>PWD</option>
-                <option>Municipality</option><option>Co-operative</option><option>Police</option>
-                <option>Employment Exchange</option>
+
               </select>
             </div>
             <div class="sub-select-wrap">
@@ -1532,13 +1526,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
                 <label class="form-label"><i class="fas fa-layer-group" style="color:var(--kerala-gold)"></i> Main Category</label>
                 <select id="meCat" class="form-input" onchange="loadSubCats('meCat','meSub');populateMePaperSelect()">
                   <option value="">— Select —</option>
-                  <option>Account Test</option><option>Revenue</option><option>Forest</option>
-                  <option>Panchayath</option><option>Registration</option><option>Prisons</option>
-                  <option>Judiciary</option><option>Social Justice</option><option>KSEB</option>
-                  <option>Local Fund Audit</option><option>Motor Vehicles</option><option>Labour</option>
-                  <option>Excise</option><option>State Goods &amp; Service Tax (GST)</option><option>PWD</option>
-                  <option>Municipality</option><option>Co-operative</option><option>Police</option>
-                  <option>Employment Exchange</option>
+
                 </select>
               </div>
               <div>
@@ -1840,13 +1828,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
               <label class="form-label"><i class="fas fa-layer-group" style="color:var(--kerala-gold)"></i> Main Category</label>
               <select id="qpbMainCat" class="form-input" onchange="loadSubCats('qpbMainCat','qpbSubCat');qpbResetBank()">
                 <option value="">— Select Main Category —</option>
-                <option>Account Test</option><option>Revenue</option><option>Forest</option>
-                <option>Panchayath</option><option>Registration</option><option>Prisons</option>
-                <option>Judiciary</option><option>Social Justice</option><option>KSEB</option>
-                <option>Local Fund Audit</option><option>Motor Vehicles</option><option>Labour</option>
-                <option>Excise</option><option>State Goods &amp; Service Tax (GST)</option><option>PWD</option>
-                <option>Municipality</option><option>Co-operative</option><option>Police</option>
-                <option>Employment Exchange</option>
+
               </select>
             </div>
             <div>
@@ -2146,13 +2128,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
           <label class="form-label"><i class="fas fa-layer-group" style="color:var(--kerala-gold)"></i> Main Category</label>
           <select id="editMainCat" class="form-input" style="font-size:13px;padding:9px 10px;" onchange="loadSubCats('editMainCat','editSubCat')">
             <option value="">— Select —</option>
-            <option>Account Test</option><option>Revenue</option><option>Forest</option>
-            <option>Panchayath</option><option>Registration</option><option>Prisons</option>
-            <option>Judiciary</option><option>Social Justice</option><option>KSEB</option>
-            <option>Local Fund Audit</option><option>Motor Vehicles</option><option>Labour</option>
-            <option>Excise</option><option>State Goods &amp; Service Tax (GST)</option><option>PWD</option>
-            <option>Municipality</option><option>Co-operative</option><option>Police</option>
-            <option>Employment Exchange</option>
+
           </select>
         </div>
         <div>
@@ -2867,7 +2843,7 @@ function showAdminPanel(panel) {
   const panelEl = document.getElementById('panel-' + panel);
   if (panelEl) panelEl.classList.add('active');
   event.currentTarget.classList.add('active');
-  if (panel === 'upload') loadPapers();
+  if (panel === 'upload') { populateAllCategoryDropdowns(); loadPapers(); }
   if (panel === 'users') loadUsers();
   if (panel === 'results') loadResults();
   if (panel === 'papers') loadPapers();
@@ -2876,13 +2852,13 @@ function showAdminPanel(panel) {
       loadCategoryManager();
     });
   }
-  if (panel === 'massexam') { populateMePaperSelect(); loadMeAdminTable(); fetchNextKde(); }
+  if (panel === 'massexam') { populateAllCategoryDropdowns(); populateMePaperSelect(); loadMeAdminTable(); fetchNextKde(); }
   if (panel === 'payments') loadPayments();
   if (panel === 'noticeboard') loadAdminNotices();
-  if (panel === 'planpricing') initPlanPricingAdmin();
+  if (panel === 'planpricing') { populateAllCategoryDropdowns(); initPlanPricingAdmin(); }
   if (panel === 'promocodes') loadPromoCodes();
   if (panel === 'addofficer') { renderOfficerRoleGrid(); loadOfficers(); }
-  if (panel === 'qpbuilder')  { qpbLoadBuiltPapers(); }
+  if (panel === 'qpbuilder')  { populateAllCategoryDropdowns(); qpbLoadBuiltPapers(); }
 }
 
 // ─── ADMIN ──────────────────────────────────── (enhanced version defined above)
@@ -2890,6 +2866,8 @@ function showAdminPanel(panel) {
 
 async function loadAdminData() {
   if (!db) { renderDemoAdminStats(); return; }
+  // Load main categories from Firestore FIRST so all dropdowns use the live list
+  await loadMainCategories();
   // Pre-load sub-category cache (including sub2 entries) so dropdowns work immediately
   await loadSubCatCache();
   try {
@@ -3531,6 +3509,27 @@ async function saveMainCategories() {
   } catch(e) { console.warn('saveMainCategories error:', e); }
 }
 
+
+// ─── POPULATE ALL MAIN CATEGORY DROPDOWNS ──────────────────────────────
+// Call this whenever editableMainCategories changes (load, add, rename, delete)
+const MAIN_CAT_SELECT_IDS = [
+  'uploadMainCat', 'meCat', 'qpbMainCat', 'editMainCat', 'pricingCatSelect'
+];
+
+function populateAllCategoryDropdowns() {
+  MAIN_CAT_SELECT_IDS.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value; // preserve current selection
+    const placeholder = id === 'pricingCatSelect'
+      ? '— Select Category —'
+      : id === 'editMainCat' ? '— Select —'
+      : '— Select Main Category —';
+    sel.innerHTML = `<option value="">${placeholder}</option>` +
+      editableMainCategories.map(c => `<option value="${c}"${c === current ? ' selected' : ''}>${c}</option>`).join('');
+  });
+}
+
 async function loadMainCategories() {
   if (!db) return;
   try {
@@ -3540,6 +3539,8 @@ async function loadMainCategories() {
     }
     // else keep the hardcoded MAIN_CATEGORIES default
   } catch(e) {}
+  // Always refresh all dropdowns after loading
+  populateAllCategoryDropdowns();
 }
 
 function loadCategoryManager() {
@@ -3663,6 +3664,7 @@ async function addMainCat() {
   // Save icon and persist category list
   await saveCategoryIcon(val, icon);
   await saveMainCategories();
+  populateAllCategoryDropdowns();
   input.value = '';
   if (iconInp) iconInp.value = '';
   loadCategoryManager();
@@ -3679,6 +3681,7 @@ function editMainCat(idx) {
   if (subCatCache[oldName]) { subCatCache[trimmed] = subCatCache[oldName]; delete subCatCache[oldName]; }
   if (activeCatManagerMain === oldName) activeCatManagerMain = trimmed;
   saveMainCategories();
+  populateAllCategoryDropdowns();
   loadCategoryManager();
   showToast('✅ Renamed to "' + trimmed + '"');
 }
@@ -3690,6 +3693,7 @@ function deleteMainCat(idx) {
   delete subCatCache[cat];
   if (activeCatManagerMain === cat) { activeCatManagerMain = null; document.getElementById('subcatPanel').innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:30px 0;">← Select a main category</div>'; }
   saveMainCategories();
+  populateAllCategoryDropdowns();
   loadCategoryManager();
   showToast('Deleted "' + cat + '"');
 }
@@ -4485,6 +4489,7 @@ async function init() {
     await loadSubCatCache();
     await seedJudiciarySubcat(); // ensure Criminal Judiciary is seeded
     await loadCategoryIcons();    // load custom emoji icons from Firestore
+    populateAllCategoryDropdowns(); // fill all dropdowns from Firestore list
   }
   await loadFavorites();
   document.getElementById('statUsers').textContent = '—';
@@ -4699,12 +4704,13 @@ function applyDynamicPricing() {
 }
 
 // ─── Admin: Populate Plan Pricing Panel ───────
-function initPlanPricingAdmin() {
-  // Populate category select
+async function initPlanPricingAdmin() {
+  // Always reload main categories from Firestore before populating
+  await loadMainCategories();
   const sel = document.getElementById('pricingCatSelect');
   if (!sel) return;
   sel.innerHTML = '<option value="">— Select Category —</option>' +
-    MAIN_CATEGORIES.map(c => `<option value="${escapeHtml(c)}">${c}</option>`).join('');
+    editableMainCategories.map(c => `<option value="${escapeHtml(c)}">${c}</option>`).join('');
 
   // Set today as default from date
   const dateInput = document.getElementById('pricingFromDate');
