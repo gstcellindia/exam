@@ -1346,6 +1346,13 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
         <p id="examMetaDisplay">100 Questions · 1.5 Hours · 1 mark/-0.33</p>
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
+        <!-- Real-time answer toggle -->
+        <div style="display:flex;align-items:center;gap:7px;background:var(--bg-body);border:1.5px solid var(--border);border-radius:10px;padding:5px 12px;font-size:12px;font-weight:700;color:#666;cursor:pointer;user-select:none;" onclick="toggleRealtimeMode()" id="realtimeToggleWrap" title="Toggle real-time answer feedback">
+          <div id="realtimeToggleTrack" style="width:34px;height:18px;border-radius:9px;background:#ccc;position:relative;transition:background .2s;flex-shrink:0;">
+            <div id="realtimeToggleThumb" style="width:14px;height:14px;border-radius:50%;background:white;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);"></div>
+          </div>
+          <span id="realtimeToggleLabel">Real-time</span>
+        </div>
         <button class="btn btn-outline btn-sm" onclick="confirmSubmit()"><i class="fas fa-check-circle"></i> Submit</button>
         <div class="exam-timer" id="examTimer">01:30:00</div>
       </div>
@@ -1364,6 +1371,9 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
     </div>
 
     <div id="questionPageList"></div>
+
+    <!-- Real-time answer feedback box -->
+    <div id="realtimeFeedback" style="display:none;margin:8px 0;padding:14px 18px;border-radius:12px;font-size:14px;font-weight:700;line-height:1.6;border:2px solid transparent;transition:all .25s;"></div>
 
     <div class="question-page-nav" id="questionPageNav">
       <button class="page-nav-arrow prev" id="btnPrevPage" onclick="prevPage()" title="Previous page"><i class="fas fa-chevron-left"></i></button>
@@ -2772,6 +2782,18 @@ async function loadExam(exam, freePreviewOnly) {
   QS_PER_PAGE = 5;
   const ppSel = document.getElementById('perPageSelect');
   if (ppSel) ppSel.value = '5';
+  // Reset real-time mode
+  realtimeMode = false;
+  realtimeCorrect = 0;
+  realtimeWrong = 0;
+  const track = document.getElementById('realtimeToggleTrack');
+  const thumb = document.getElementById('realtimeToggleThumb');
+  const label = document.getElementById('realtimeToggleLabel');
+  if (track) track.style.background = '#ccc';
+  if (thumb) thumb.style.left = '2px';
+  if (label) { label.style.color = '#666'; }
+  const fb = document.getElementById('realtimeFeedback');
+  if (fb) fb.style.display = 'none';
   startTimer(exam.duration * 60);
   renderPage(0);
 }
@@ -2821,8 +2843,20 @@ function renderPage(page) {
     const optionsHTML = opts.map((letter, oi) => {
       const hasMLOpt = q[mlOptKeys[oi]];
       const text = (showML && hasMLOpt) ? q[mlOptKeys[oi]] : (q[optKeys[oi]] || '');
-      const sel = selected === letter ? 'selected' : '';
-      return `<button class="option-btn ${sel}" onclick="selectOption(${idx},'${letter}')">
+      let cls = 'option-btn';
+      let clickHandler = `onclick="selectOption(${idx},'${letter}')"`;
+      let extraStyle = '';
+      if (realtimeMode && selected) {
+        // Question already answered in real-time mode — show results, lock
+        const correctLetter = (q.answer || '').toUpperCase();
+        if (letter === correctLetter) cls += ' correct';
+        else if (letter === selected && letter !== correctLetter) cls += ' wrong';
+        clickHandler = 'onclick="return false"';
+        extraStyle = 'style="cursor:default"';
+      } else {
+        if (selected === letter) cls += ' selected';
+      }
+      return `<button class="${cls}" ${clickHandler} ${extraStyle}>
         <div class="option-letter">${letter}</div>
         <div class="option-text">${text}</div>
       </button>`;
@@ -2885,7 +2919,47 @@ function renderQnumGrid(activePage) {
   }).join('');
 }
 
+// ─── REAL-TIME ANSWER MODE ────────────────────
+let realtimeMode = false;
+let realtimeCorrect = 0;
+let realtimeWrong = 0;
+
+function toggleRealtimeMode() {
+  realtimeMode = !realtimeMode;
+  const track = document.getElementById('realtimeToggleTrack');
+  const thumb = document.getElementById('realtimeToggleThumb');
+  const label = document.getElementById('realtimeToggleLabel');
+  if (realtimeMode) {
+    track.style.background = 'var(--kerala-green)';
+    thumb.style.left = '18px';
+    label.style.color = 'var(--kerala-green)';
+  } else {
+    track.style.background = '#ccc';
+    thumb.style.left = '2px';
+    label.style.color = '#666';
+    document.getElementById('realtimeFeedback').style.display = 'none';
+  }
+}
+
+function showRealtimeFeedback(isCorrect) {
+  const total = currentExam.questions.length;
+  const marks = (realtimeCorrect - realtimeWrong * 0.33).toFixed(2);
+  const fb = document.getElementById('realtimeFeedback');
+  if (!fb) return;
+  if (isCorrect) {
+    fb.style.cssText = 'display:block;margin:8px 0;padding:14px 18px;border-radius:12px;font-size:14px;font-weight:700;line-height:1.8;border:2px solid #81C784;background:#E8F5EE;color:#2E7D32;';
+    fb.innerHTML = '<i class="fas fa-check-circle" style="margin-right:6px;"></i> Correct! &nbsp;·&nbsp; ' + realtimeCorrect + ' of ' + total + ' correct &nbsp;·&nbsp; Total marks: <span style="font-size:16px;">' + marks + '</span>';
+  } else {
+    fb.style.cssText = 'display:block;margin:8px 0;padding:14px 18px;border-radius:12px;font-size:14px;font-weight:700;line-height:1.8;border:2px solid #FFCDD2;background:#ffffff;color:#C62828;';
+    fb.innerHTML = '<i class="fas fa-times-circle" style="margin-right:6px;"></i> Wrong! &nbsp;·&nbsp; ' + realtimeWrong + ' of ' + total + ' wrong &nbsp;·&nbsp; Total marks: <span style="font-size:16px;">' + marks + '</span>';
+  }
+}
+
 function selectOption(idx, letter) {
+  // In real-time mode, lock question once answered
+  if (realtimeMode && userAnswers[idx]) return;
+
+  const wasAnswered = !!userAnswers[idx];
   userAnswers[idx] = letter;
   const block = document.getElementById('qblock-' + idx);
   if (block) {
@@ -2894,16 +2968,35 @@ function selectOption(idx, letter) {
     if (textEl && !textEl.querySelector('.answered-inline-badge')) {
       textEl.insertAdjacentHTML('beforeend', '<span class="answered-inline-badge">✓</span>');
     }
-    block.querySelectorAll('.option-btn').forEach((btn, i) => {
-      btn.className = 'option-btn' + (['A','B','C','D'][i] === letter ? ' selected' : '');
-    });
+
+    if (realtimeMode) {
+      const correctLetter = (currentExam.questions[idx].answer || '').toUpperCase();
+      const isCorrect = letter === correctLetter;
+      if (!wasAnswered) {
+        if (isCorrect) realtimeCorrect++; else realtimeWrong++;
+      }
+      // Show correct/wrong highlighting and lock buttons
+      block.querySelectorAll('.option-btn').forEach((btn, i) => {
+        const btnLetter = ['A','B','C','D'][i];
+        let cls = 'option-btn';
+        if (btnLetter === correctLetter) cls += ' correct';
+        else if (btnLetter === letter && !isCorrect) cls += ' wrong';
+        btn.className = cls;
+        btn.onclick = null;
+        btn.style.cursor = 'default';
+      });
+      showRealtimeFeedback(isCorrect);
+    } else {
+      block.querySelectorAll('.option-btn').forEach((btn, i) => {
+        btn.className = 'option-btn' + (['A','B','C','D'][i] === letter ? ' selected' : '');
+      });
+    }
   }
   updateProgress();
-  // Update the specific button in qnum grid without full re-render
-  const qBtn = document.querySelector(`#qnumGrid .qnum-btn:nth-child(${idx+1})`);
+  const qBtn = document.querySelector('#qnumGrid .qnum-btn:nth-child(' + (idx+1) + ')');
   if (qBtn) {
     qBtn.classList.add('qnum-answered');
-    qBtn.title = `Q${idx+1} ✓`;
+    qBtn.title = 'Q' + (idx+1) + ' ✓';
   }
 }
 
