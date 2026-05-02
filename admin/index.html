@@ -1234,12 +1234,18 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
 </nav>
 
 <!-- Admin Access Gate (shown to non-admins) -->
-<div id="adminGate" style="display:none;text-align:center;padding:80px 20px;">
-  <div style="font-size:64px;margin-bottom:16px;">🔒</div>
-  <h2 style="font-size:22px;font-weight:800;color:var(--kerala-dark);margin-bottom:8px;">Admin Access Only</h2>
-  <p style="color:#666;font-size:14px;margin-bottom:24px;">You must be signed in as an administrator to access this page.</p>
-  <button class="btn btn-primary" onclick="openAuth()"><i class="fas fa-sign-in-alt"></i> Sign In</button>
-  <a href="https://www.exampsc.in" class="btn btn-outline" style="margin-left:10px;text-decoration:none;"><i class="fas fa-home"></i> Go to Site</a>
+<div id="adminGate" style="display:block;text-align:center;padding:80px 20px;">
+  <div id="adminGateContent">
+    <div style="font-size:48px;margin-bottom:16px;"><i class="fas fa-spinner fa-spin" style="color:var(--kerala-gold);"></i></div>
+    <p style="color:#888;font-size:15px;font-weight:600;">Verifying access…</p>
+  </div>
+  <div id="adminGateDenied" style="display:none;">
+    <div style="font-size:64px;margin-bottom:16px;">🔒</div>
+    <h2 style="font-size:22px;font-weight:800;color:var(--kerala-dark);margin-bottom:8px;">Admin Access Only</h2>
+    <p style="color:#666;font-size:14px;margin-bottom:24px;">You must be signed in as an administrator to access this page.</p>
+    <button class="btn btn-primary" onclick="openAuth()"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+    <a href="https://www.exampsc.in" class="btn btn-outline" style="margin-left:10px;text-decoration:none;"><i class="fas fa-home"></i> Go to Site</a>
+  </div>
 </div>
 
 <!-- Admin Page Content -->
@@ -1817,6 +1823,167 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
 
       </div><!-- end panel-addofficer -->
 
+      <!-- ─── QUESTION PAPER BUILDER PANEL ─────────────────── -->
+      <div class="admin-panel" id="panel-qpbuilder">
+
+        <!-- Step 1: Select Category & load questions -->
+        <div class="admin-card" style="margin-bottom:16px;">
+          <h3><i class="fas fa-drafting-compass" style="color:var(--kerala-gold);margin-right:8px;"></i> Question Paper Builder – From Question Bank</h3>
+          <p style="font-size:13px;color:#666;margin-bottom:18px;">Select a category and sub-category to browse questions from the bank. Then configure your paper and either auto-select randomly or pick manually.</p>
+
+          <!-- Category selectors -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;align-items:end;">
+            <div>
+              <label class="form-label"><i class="fas fa-layer-group" style="color:var(--kerala-gold)"></i> Main Category</label>
+              <select id="qpbMainCat" class="form-input" onchange="loadSubCats('qpbMainCat','qpbSubCat');qpbResetBank()">
+                <option value="">— Select Main Category —</option>
+                <option>Account Test</option><option>Revenue</option><option>Forest</option>
+                <option>Panchayath</option><option>Registration</option><option>Prisons</option>
+                <option>Judiciary</option><option>Social Justice</option><option>KSEB</option>
+                <option>Local Fund Audit</option><option>Motor Vehicles</option><option>Labour</option>
+                <option>Excise</option><option>State Goods &amp; Service Tax (GST)</option><option>PWD</option>
+                <option>Municipality</option><option>Co-operative</option><option>Police</option>
+                <option>Employment Exchange</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label"><i class="fas fa-tag" style="color:var(--kerala-mid)"></i> Sub-category</label>
+              <select id="qpbSubCat" class="form-input" disabled onchange="qpbResetBank()">
+                <option value="">— Select Main Category first —</option>
+              </select>
+            </div>
+            <div>
+              <button class="btn btn-primary" style="width:100%;padding:10px;" onclick="qpbLoadBank()">
+                <i class="fas fa-database"></i> Load Question Bank
+              </button>
+            </div>
+          </div>
+
+          <!-- Bank stats bar -->
+          <div id="qpbBankStats" style="display:none;background:#EEF3FF;border:1.5px solid var(--border);border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+            <span style="font-size:13px;font-weight:700;color:var(--kerala-dark);"><i class="fas fa-question-circle" style="color:var(--kerala-gold);margin-right:6px;"></i> Total Questions: <span id="qpbTotalCount" style="color:var(--kerala-green);">0</span></span>
+            <span style="font-size:13px;font-weight:700;color:var(--kerala-dark);"><i class="fas fa-check-square" style="color:var(--kerala-mid);margin-right:6px;"></i> Selected: <span id="qpbSelectedCount" style="color:var(--kerala-dark);">0</span></span>
+            <span style="font-size:13px;font-weight:700;color:var(--kerala-dark);"><i class="fas fa-file-alt" style="color:var(--kerala-gold);margin-right:6px;"></i> Papers found: <span id="qpbPapersCount">0</span></span>
+          </div>
+
+          <!-- Paginated question bank table -->
+          <div id="qpbBankSection" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+              <div style="font-size:13px;font-weight:700;color:var(--kerala-dark);"><i class="fas fa-list-ol" style="color:var(--kerala-gold);margin-right:6px;"></i> Question Bank</div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" id="qpbSearch" class="form-input" placeholder="Search questions…" style="font-size:12px;padding:6px 10px;width:200px;" oninput="qpbFilterBank()">
+                <button class="btn btn-sm" style="background:#EEF3FF;color:var(--kerala-dark);border:1.5px solid var(--border);" onclick="qpbSelectAll()"><i class="fas fa-check-double"></i> Select All (Page)</button>
+                <button class="btn btn-sm btn-outline" onclick="qpbClearAll()"><i class="fas fa-times"></i> Clear All</button>
+              </div>
+            </div>
+            <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead>
+                  <tr>
+                    <th style="width:36px;text-align:center;"><input type="checkbox" id="qpbSelectAllChk" title="Select all on page" onchange="qpbTogglePageAll(this.checked)"></th>
+                    <th style="width:44px;">Q#</th>
+                    <th>Question (EN)</th>
+                    <th style="width:90px;">Source Paper</th>
+                    <th style="width:55px;">Answer</th>
+                  </tr>
+                </thead>
+                <tbody id="qpbBankTable"></tbody>
+              </table>
+            </div>
+            <!-- Pagination -->
+            <div class="pagination-wrap" id="qpbPagination" style="margin-top:10px;">
+              <span class="pagination-info" id="qpbPageInfo"></span>
+              <div class="pagination-btns" id="qpbPageBtns"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Paper Configuration -->
+        <div class="admin-card" id="qpbConfigCard" style="display:none;margin-bottom:16px;">
+          <h3><i class="fas fa-cog" style="color:var(--kerala-gold);margin-right:8px;"></i> Configure Question Paper</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:18px;align-items:start;">
+            <div>
+              <label class="form-label"><i class="fas fa-file-alt" style="color:var(--kerala-gold)"></i> Exam Name / Title</label>
+              <input class="form-input" id="qpbExamName" placeholder="e.g. Mock Test – Account Test 2025">
+            </div>
+            <div>
+              <label class="form-label"><i class="fas fa-sort-numeric-up" style="color:var(--kerala-gold)"></i> No. of Questions</label>
+              <input class="form-input" type="number" id="qpbNumQ" placeholder="e.g. 50" min="1" oninput="qpbValidateNumQ()">
+              <span id="qpbNumQHint" style="font-size:11px;color:#aaa;margin-top:3px;display:block;"></span>
+            </div>
+            <div>
+              <label class="form-label"><i class="fas fa-clock" style="color:var(--kerala-mid)"></i> Duration (minutes)</label>
+              <input class="form-input" type="number" id="qpbDuration" placeholder="e.g. 60" min="1">
+            </div>
+            <div>
+              <label class="form-label"><i class="fas fa-tag" style="color:var(--kerala-gold)"></i> Price (₹)</label>
+              <input class="form-input" type="number" id="qpbPrice" placeholder="0" value="0" min="0">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
+            <button class="btn btn-gold" onclick="qpbAutoSelect()">
+              <i class="fas fa-random"></i> Auto-Select Randomly
+            </button>
+            <span style="font-size:12px;color:#888;">or manually check questions from the bank above, then →</span>
+            <button class="btn btn-primary" onclick="qpbBuildPaper()">
+              <i class="fas fa-file-signature"></i> Build Paper from Selected
+            </button>
+          </div>
+          <div id="qpbConfigMsg" style="display:none;margin-top:10px;font-size:13px;font-weight:600;padding:10px 14px;border-radius:8px;"></div>
+        </div>
+
+        <!-- Step 3: Preview & Publish -->
+        <div class="admin-card" id="qpbPreviewCard" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;"><i class="fas fa-eye" style="color:var(--kerala-gold);margin-right:8px;"></i> Paper Preview – <span id="qpbPreviewTitle" style="color:var(--kerala-mid);"></span></h3>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-sm btn-outline" onclick="qpbResetPreview()"><i class="fas fa-redo"></i> Reset</button>
+              <button class="btn btn-sm btn-gold" onclick="qpbPublish('home')" style="display:none;" id="qpbPublishHomeBtn">
+                <i class="fas fa-globe"></i> Publish to Home
+              </button>
+              <button class="btn btn-sm btn-primary" onclick="qpbPublish('massexam')">
+                <i class="fas fa-users-cog"></i> Add to Mass Exam
+              </button>
+            </div>
+          </div>
+          <div id="qpbPreviewMeta" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:13px;color:#555;"></div>
+          <div class="table-wrap" style="max-height:360px;overflow-y:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead>
+                <tr>
+                  <th style="width:44px;">Q#</th>
+                  <th>Question</th>
+                  <th style="width:80px;">A</th>
+                  <th style="width:80px;">B</th>
+                  <th style="width:80px;">C</th>
+                  <th style="width:80px;">D</th>
+                  <th style="width:55px;">Ans</th>
+                  <th style="width:50px;"><i class="fas fa-lock" title="Lock"></i></th>
+                  <th style="width:40px;"></th>
+                </tr>
+              </thead>
+              <tbody id="qpbPreviewTable"></tbody>
+            </table>
+          </div>
+          <div id="qpbPublishMsg" style="display:none;margin-top:12px;font-size:13px;font-weight:600;padding:10px 14px;border-radius:8px;"></div>
+        </div>
+
+        <!-- Existing Built Papers -->
+        <div class="admin-card" style="margin-top:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;"><i class="fas fa-archive" style="margin-right:6px;color:var(--kerala-gold);"></i> Built Question Papers</h3>
+            <button class="btn btn-sm btn-outline" onclick="qpbLoadBuiltPapers()"><i class="fas fa-sync"></i> Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Title</th><th>Category</th><th>Questions</th><th>Duration</th><th>Price</th><th>Published To</th><th>Created</th><th>Actions</th></tr></thead>
+              <tbody id="qpbBuiltTable"><tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- end panel-qpbuilder -->
+
     </div>
   </div>
 </div><!-- end page-admin -->
@@ -2371,21 +2538,28 @@ async function doChangePassword() {
 }
 
 // Auth state observer
+// NOTE: On admin.html the bootstrap handler at the bottom of the file is the authority
+// for all auth state changes (it handles both super-admin AND officer sub-admin checks).
+// This stub fires first but defers all gate/panel logic to the bootstrap handler.
 if (auth) {
   auth.onAuthStateChanged(user => {
     currentUser = user;
     if (user) {
-      isAdmin = ADMIN_EMAILS.includes(user.email);
+      // Only update basic nav UI here — admin/officer gate is handled by bootstrap handler below
       document.getElementById('navUser').style.display = 'flex';
       document.getElementById('btnLogin').style.display = 'none';
       const initials = (user.displayName || user.email || 'U')[0].toUpperCase();
       document.getElementById('navAvatar').textContent = initials;
       document.getElementById('udName').textContent = user.displayName || user.email || 'User';
       document.getElementById('udEmail').textContent = user.email || '';
-      if (isAdmin) document.getElementById('tab-admin').style.display = 'flex';
       document.getElementById('tab-plan').style.display = 'flex';
       loadUserPurchases(user.uid);
       loadFavorites();
+      // isAdmin and officer check handled by bootstrap handler — do NOT set it here
+    } else {
+      currentUser = null;
+      document.getElementById('navUser').style.display = 'none';
+      document.getElementById('btnLogin').style.display = '';
     }
   });
 }
@@ -2674,6 +2848,7 @@ function showAdminPanel(panel) {
   if (panel === 'planpricing') initPlanPricingAdmin();
   if (panel === 'promocodes') loadPromoCodes();
   if (panel === 'addofficer') { renderOfficerRoleGrid(); loadOfficers(); }
+  if (panel === 'qpbuilder')  { qpbLoadBuiltPapers(); }
 }
 
 // ─── ADMIN ──────────────────────────────────── (enhanced version defined above)
@@ -3578,10 +3753,32 @@ function processMeCsvFile(file) {
 
 function populateMePaperSelect() {
   const sel = document.getElementById('mePaperSel');
-  if (!sel) return;
-  const papers = examPapers.length ? examPapers : demoExams;
-  sel.innerHTML = '<option value="">— Select a question paper —</option>' +
-    papers.map(p => `<option value="${p.id}">${p.title} (${p.qCount||0}q)</option>`).join('');
+  if (!sel || !db) return;
+  sel.innerHTML = '<option value="">Loading papers…</option>';
+  // Fetch ALL papers from Firestore (including builtPaper ones) for mass exam selection
+  db.collection('papers').get().then(snap => {
+    const allPapers = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    // Group: built papers first, then regular papers
+    const builtPapers  = allPapers.filter(p => p.builtPaper === true);
+    const regularPapers = allPapers.filter(p => !p.builtPaper);
+    let html = '<option value="">— Select a question paper —</option>';
+    if (builtPapers.length) {
+      html += '<optgroup label="── Built Papers (Paper Builder) ──">' +
+        builtPapers.map(p => `<option value="${p.id}">📋 ${p.title||'Untitled'} (${p.qCount||0}q)</option>`).join('') +
+        '</optgroup>';
+    }
+    if (regularPapers.length) {
+      html += '<optgroup label="── Uploaded Papers ──">' +
+        regularPapers.map(p => `<option value="${p.id}">${p.title||'Untitled'} (${p.qCount||0}q)</option>`).join('') +
+        '</optgroup>';
+    }
+    sel.innerHTML = html;
+  }).catch(() => {
+    // Fallback to local examPapers cache
+    const papers = examPapers.length ? examPapers : demoExams;
+    sel.innerHTML = '<option value="">— Select a question paper —</option>' +
+      papers.map(p => `<option value="${p.id}">${p.title} (${p.qCount||0}q)</option>`).join('');
+  });
 }
 
 async function createMassExam() {
@@ -3658,6 +3855,16 @@ async function createMassExam() {
     document.getElementById('meCsvDropZone').style.borderColor = '';
     loadMeAdminTable();
   } catch(e) { showToast('Create failed: ' + e.message); }
+}
+
+// ─── getMeStatus: returns live | upcoming | ended ─────────────────────
+function getMeStatus(me) {
+  const now = Date.now();
+  const start = me.startTime ? (me.startTime.toDate ? me.startTime.toDate().getTime() : new Date(me.startTime).getTime()) : 0;
+  const end   = me.endTime   ? (me.endTime.toDate   ? me.endTime.toDate().getTime()   : new Date(me.endTime).getTime())   : 0;
+  if (now >= start && now <= end) return 'live';
+  if (now < start) return 'upcoming';
+  return 'ended';
 }
 
 async function loadMeAdminTable() {
@@ -4058,12 +4265,23 @@ function showToast(msg) {
 }
 
 // ─── INIT ─────────────────────────────────────
+// NOTE FOR HOME PAGE (index.html / home page file):
+// To hide Mass-Exam-only built papers from users, the home page paper query must also filter.
+// Replace:  db.collection('papers').get()
+// With:     db.collection('papers').where('forMassExam','!=',true).get()
+// OR filter client-side after get():
+//   papers = papers.filter(p => !(p.builtPaper === true && p.showOnHome !== true));
 async function init() {
   // Load papers from Firestore if available
   if (db) {
     try {
       const snap = await db.collection('papers').get();
-      if (!snap.empty) examPapers = snap.docs.map(d => ({id:d.id, ...d.data()}));
+      if (!snap.empty) {
+        // Exclude built papers that are NOT marked showOnHome — they are for Mass Exam only
+        examPapers = snap.docs
+          .map(d => ({id: d.id, ...d.data()}))
+          .filter(p => !(p.builtPaper === true && p.showOnHome !== true));
+      }
     } catch(e) {}
     await loadSubCatCache();
   }
@@ -4601,6 +4819,7 @@ const OFFICER_PANELS = [
   { id: 'payments',    label: 'Payments',            icon: 'fa-money-bill-wave' },
   { id: 'noticeboard', label: 'Notice Board',        icon: 'fa-bullhorn' },
   { id: 'planpricing', label: 'Plan Pricing',        icon: 'fa-tags' },
+  { id: 'qpbuilder',   label: 'Paper Builder',       icon: 'fa-drafting-compass' },
   { id: 'promocodes',  label: 'Promo Codes',         icon: 'fa-percent' },
 ];
 
@@ -4802,6 +5021,7 @@ function renderRoleAwareSidebar() {
     { id: 'noticeboard', label: 'Notice Board',        icon: 'fa-bullhorn' },
     { id: 'planpricing', label: 'Plan Pricing',        icon: 'fa-tags' },
     { id: 'promocodes',  label: 'Promo Codes',         icon: 'fa-percent' },
+    { id: 'qpbuilder',   label: 'Paper Builder',       icon: 'fa-drafting-compass' },
     { id: 'addofficer',  label: 'Add Officer',         icon: 'fa-user-shield',     superadminOnly: true },
   ];
 
@@ -4838,6 +5058,488 @@ function renderRoleAwareSidebar() {
 </script>
 
 <script>
+// ─── QUESTION PAPER BUILDER ──────────────────────────────────────────────
+// State
+let qpbAllQuestions  = [];   // all questions fetched from bank
+let qpbFilteredQ     = [];   // after search filter
+let qpbSelectedIds   = new Set(); // selected question IDs
+let qpbPage          = 1;
+const QPB_PAGE_SIZE  = 20;
+let qpbBuiltQuestions = [];  // final paper questions
+let qpbPaperMeta     = {};   // title, duration, price
+
+function qpbResetBank() {
+  qpbAllQuestions = [];
+  qpbFilteredQ    = [];
+  qpbSelectedIds  = new Set();
+  qpbPage         = 1;
+  document.getElementById('qpbBankStats').style.display  = 'none';
+  document.getElementById('qpbBankSection').style.display = 'none';
+  document.getElementById('qpbConfigCard').style.display  = 'none';
+  document.getElementById('qpbPreviewCard').style.display = 'none';
+  qpbUpdateCounts();
+}
+
+async function qpbLoadBank() {
+  if (!db) { showToast('Firebase not connected.'); return; }
+  const mainCat = document.getElementById('qpbMainCat').value;
+  if (!mainCat) { showToast('Please select a Main Category.'); return; }
+  const subCat  = document.getElementById('qpbSubCat').value;
+
+  showToast('Loading question bank…', 2000);
+  qpbAllQuestions = [];
+  qpbSelectedIds  = new Set();
+  qpbPage         = 1;
+
+  try {
+    // Fetch all papers matching mainCategory.
+    // We only filter by mainCategory (single-field) to avoid needing a composite index.
+    // If subCat is set, we filter client-side to avoid a composite index requirement.
+    const papersSnap = await db.collection('papers')
+      .where('mainCategory', '==', mainCat)
+      .get();
+    // Client-side sub-category filter (avoids composite index on mainCategory+subCategory)
+    const matchingDocs = subCat
+      ? papersSnap.docs.filter(d => (d.data().subCategory || d.data().category || '') === subCat)
+      : papersSnap.docs;
+
+    let paperCount = 0;
+    const fetchPromises = matchingDocs.map(async paperDoc => {
+      paperCount++;
+      const paperData = paperDoc.data();
+      const qSnap = await db.collection('papers').doc(paperDoc.id).collection('questions').get();
+      qSnap.docs.forEach(qDoc => {
+        const q = qDoc.data();
+        qpbAllQuestions.push({
+          uid: paperDoc.id + '__' + qDoc.id,
+          paperId: paperDoc.id,
+          paperTitle: paperData.title || paperData.subCategory || 'Unknown Paper',
+          q_no: q.q_no || qDoc.id,
+          question_en: q.question_en || q.question || '',
+          question_ml: q.question_ml || '',
+          option_a: q.option_a || '',
+          option_b: q.option_b || '',
+          option_c: q.option_c || '',
+          option_d: q.option_d || '',
+          answer: q.answer || '',
+          locked: q.locked || false
+        });
+      });
+      document.getElementById('qpbPapersCount').textContent = paperCount;
+    });
+
+    await Promise.all(fetchPromises);
+
+    if (!qpbAllQuestions.length) {
+      showToast('No questions found for the selected category.');
+      return;
+    }
+
+    // Sort by paper then q_no
+    qpbAllQuestions.sort((a,b) => {
+      if (a.paperId !== b.paperId) return a.paperId.localeCompare(b.paperId);
+      return String(a.q_no).localeCompare(String(b.q_no), undefined, { numeric: true });
+    });
+
+    qpbFilteredQ = [...qpbAllQuestions];
+    document.getElementById('qpbBankStats').style.display = 'flex';
+    document.getElementById('qpbBankSection').style.display = 'block';
+    document.getElementById('qpbConfigCard').style.display = 'block';
+    document.getElementById('qpbTotalCount').textContent = qpbAllQuestions.length;
+    document.getElementById('qpbPapersCount').textContent = paperCount;
+    qpbUpdateCounts();
+    qpbRenderPage();
+    showToast(`Loaded ${qpbAllQuestions.length} questions from ${paperCount} papers.`);
+  } catch(e) {
+    showToast('Error loading bank: ' + e.message);
+  }
+}
+
+function qpbFilterBank() {
+  const q = (document.getElementById('qpbSearch').value || '').toLowerCase().trim();
+  qpbFilteredQ = q
+    ? qpbAllQuestions.filter(r =>
+        (r.question_en||'').toLowerCase().includes(q) ||
+        (r.question_ml||'').toLowerCase().includes(q) ||
+        (r.paperTitle||'').toLowerCase().includes(q) ||
+        String(r.q_no).includes(q)
+      )
+    : [...qpbAllQuestions];
+  qpbPage = 1;
+  qpbRenderPage();
+}
+
+function qpbRenderPage() {
+  const tbody = document.getElementById('qpbBankTable');
+  const total  = qpbFilteredQ.length;
+  const pages  = Math.max(1, Math.ceil(total / QPB_PAGE_SIZE));
+  qpbPage = Math.min(qpbPage, pages);
+  const start = (qpbPage - 1) * QPB_PAGE_SIZE;
+  const slice = qpbFilteredQ.slice(start, start + QPB_PAGE_SIZE);
+
+  tbody.innerHTML = slice.map((r, i) => {
+    const checked = qpbSelectedIds.has(r.uid) ? 'checked' : '';
+    const qText = escapeHtml((r.question_en||r.question_ml||'').substring(0, 90)) + (((r.question_en||r.question_ml||'').length > 90) ? '…' : '');
+    const src = escapeHtml((r.paperTitle||'').substring(0,30));
+    const ans = r.answer || '—';
+    return `<tr style="background:${qpbSelectedIds.has(r.uid) ? '#EEF3FF' : 'white'}" id="qpbRow_${r.uid.replace(/[^a-z0-9]/gi,'_')}">
+      <td style="text-align:center;"><input type="checkbox" ${checked} data-uid="${r.uid}" onchange="qpbToggleQ(this)" style="width:15px;height:15px;accent-color:var(--kerala-dark);cursor:pointer;"></td>
+      <td style="font-weight:700;color:#888;font-size:11px;">${escapeHtml(String(r.q_no))}</td>
+      <td style="font-size:12px;line-height:1.5;">${qText}</td>
+      <td style="font-size:11px;color:var(--kerala-mid);font-weight:600;">${src}</td>
+      <td style="font-weight:700;color:var(--kerala-green);text-align:center;">${ans}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:16px;">No questions match.</td></tr>';
+
+  // Pagination
+  document.getElementById('qpbPageInfo').textContent = `Showing ${start+1}–${Math.min(start+QPB_PAGE_SIZE, total)} of ${total}`;
+  const btns = document.getElementById('qpbPageBtns');
+  btns.innerHTML = '';
+  for (let p = 1; p <= pages; p++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (p === qpbPage ? ' active' : '');
+    btn.textContent = p;
+    btn.onclick = (()=>{ const pg=p; return ()=>{ qpbPage=pg; qpbRenderPage(); }; })();
+    btns.appendChild(btn);
+  }
+
+  // Sync header checkbox
+  const allOnPage = slice.every(r => qpbSelectedIds.has(r.uid));
+  document.getElementById('qpbSelectAllChk').checked = slice.length > 0 && allOnPage;
+}
+
+function qpbToggleQ(chk) {
+  const uid = chk.dataset.uid;
+  if (chk.checked) qpbSelectedIds.add(uid);
+  else qpbSelectedIds.delete(uid);
+  qpbUpdateCounts();
+  // Update row highlight
+  const safeId = uid.replace(/[^a-z0-9]/gi,'_');
+  const row = document.getElementById('qpbRow_' + safeId);
+  if (row) row.style.background = chk.checked ? '#EEF3FF' : 'white';
+}
+
+function qpbTogglePageAll(checked) {
+  const start = (qpbPage - 1) * QPB_PAGE_SIZE;
+  const slice = qpbFilteredQ.slice(start, start + QPB_PAGE_SIZE);
+  slice.forEach(r => {
+    if (checked) qpbSelectedIds.add(r.uid);
+    else qpbSelectedIds.delete(r.uid);
+    const safeId = r.uid.replace(/[^a-z0-9]/gi,'_');
+    const row = document.getElementById('qpbRow_' + safeId);
+    if (row) {
+      row.style.background = checked ? '#EEF3FF' : 'white';
+      const chk = row.querySelector('input[type=checkbox]');
+      if (chk) chk.checked = checked;
+    }
+  });
+  qpbUpdateCounts();
+}
+
+function qpbSelectAll() { qpbTogglePageAll(true); document.getElementById('qpbSelectAllChk').checked = true; }
+function qpbClearAll()   {
+  qpbSelectedIds.clear();
+  document.getElementById('qpbSelectAllChk').checked = false;
+  qpbRenderPage();
+  qpbUpdateCounts();
+}
+
+function qpbUpdateCounts() {
+  const el = document.getElementById('qpbSelectedCount');
+  if (el) el.textContent = qpbSelectedIds.size;
+}
+
+function qpbValidateNumQ() {
+  const n = parseInt(document.getElementById('qpbNumQ').value) || 0;
+  const hint = document.getElementById('qpbNumQHint');
+  const total = qpbAllQuestions.length;
+  if (n > total) {
+    hint.textContent = `⚠️ Only ${total} questions in bank. Max = ${total}.`;
+    hint.style.color = 'var(--kerala-red)';
+  } else if (n > 0) {
+    hint.textContent = `✔ ${n} of ${total} will be selected.`;
+    hint.style.color = 'var(--kerala-green)';
+  } else {
+    hint.textContent = '';
+  }
+}
+
+function qpbAutoSelect() {
+  const n = parseInt(document.getElementById('qpbNumQ').value) || 0;
+  if (!n) { qpbShowConfigMsg('error', 'Enter the number of questions first.'); return; }
+  if (n > qpbAllQuestions.length) {
+    qpbShowConfigMsg('error', `Bank has only ${qpbAllQuestions.length} questions.`);
+    return;
+  }
+  // Fisher-Yates shuffle
+  const arr = [...qpbAllQuestions];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  qpbSelectedIds = new Set(arr.slice(0, n).map(r => r.uid));
+  qpbUpdateCounts();
+  qpbRenderPage();
+  qpbShowConfigMsg('success', `<i class="fas fa-check-circle"></i> Randomly selected ${n} questions. Click "Build Paper from Selected" to continue.`);
+}
+
+function qpbBuildPaper() {
+  const title    = (document.getElementById('qpbExamName').value || '').trim();
+  const numQ     = parseInt(document.getElementById('qpbNumQ').value) || 0;
+  const duration = parseInt(document.getElementById('qpbDuration').value) || 0;
+  const price    = parseFloat(document.getElementById('qpbPrice').value) || 0;
+
+  if (!title)    { qpbShowConfigMsg('error', 'Enter an exam name/title.'); return; }
+  if (!duration) { qpbShowConfigMsg('error', 'Enter duration in minutes.'); return; }
+  if (!qpbSelectedIds.size) { qpbShowConfigMsg('error', 'No questions selected. Select manually or use Auto-Select.'); return; }
+
+  if (numQ && qpbSelectedIds.size !== numQ) {
+    qpbShowConfigMsg('info', `ℹ️ Building with ${qpbSelectedIds.size} selected (target was ${numQ}).`);
+  }
+
+  // Collect selected questions in order
+  qpbBuiltQuestions = qpbAllQuestions
+    .filter(r => qpbSelectedIds.has(r.uid))
+    .map((r, i) => ({ ...r, q_no: i + 1, locked: false }));
+
+  qpbPaperMeta = {
+    title, duration, price,
+    mainCategory: document.getElementById('qpbMainCat').value,
+    subCategory:  document.getElementById('qpbSubCat').value  || '',
+    qCount: qpbBuiltQuestions.length
+  };
+
+  // Show preview
+  document.getElementById('qpbPreviewTitle').textContent = title;
+  document.getElementById('qpbPreviewMeta').innerHTML = `
+    <span><i class="fas fa-list-ol" style="color:var(--kerala-gold);margin-right:4px;"></i> ${qpbBuiltQuestions.length} Questions</span>
+    <span><i class="fas fa-clock" style="color:var(--kerala-mid);margin-right:4px;"></i> ${duration} min</span>
+    <span><i class="fas fa-tag" style="color:var(--kerala-gold);margin-right:4px;"></i> ₹${price}</span>
+    <span><i class="fas fa-layer-group" style="color:var(--kerala-dark);margin-right:4px;"></i> ${qpbPaperMeta.mainCategory}${qpbPaperMeta.subCategory ? ' › '+qpbPaperMeta.subCategory : ''}</span>
+  `;
+  qpbRenderPreviewTable();
+  document.getElementById('qpbPreviewCard').style.display = 'block';
+  document.getElementById('qpbPreviewCard').scrollIntoView({ behavior: 'smooth' });
+  qpbShowConfigMsg('success', `<i class="fas fa-check-circle"></i> Paper ready. Review below and publish.`);
+  document.getElementById('qpbPublishMsg').style.display = 'none';
+}
+
+function qpbRenderPreviewTable() {
+  const tbody = document.getElementById('qpbPreviewTable');
+  tbody.innerHTML = qpbBuiltQuestions.map((q, i) => {
+    const lockIcon = q.locked
+      ? `<button class="lock-btn locked" title="Click to unlock" onclick="qpbToggleLock(${i})"><i class="fas fa-lock"></i></button>`
+      : `<button class="lock-btn unlocked" title="Click to lock" onclick="qpbToggleLock(${i})"><i class="fas fa-unlock"></i></button>`;
+    return `<tr id="qpbPvRow_${i}" style="${q.locked ? 'background:#FFF8F0;' : ''}">
+      <td style="font-weight:700;color:#888;">${q.q_no}</td>
+      <td style="font-size:12px;line-height:1.5;">${escapeHtml((q.question_en||q.question_ml||'').substring(0,100))}${(q.question_en||q.question_ml||'').length>100?'…':''}</td>
+      <td style="font-size:11px;">${escapeHtml(q.option_a||'')}</td>
+      <td style="font-size:11px;">${escapeHtml(q.option_b||'')}</td>
+      <td style="font-size:11px;">${escapeHtml(q.option_c||'')}</td>
+      <td style="font-size:11px;">${escapeHtml(q.option_d||'')}</td>
+      <td style="font-weight:700;color:var(--kerala-green);text-align:center;">${q.answer}</td>
+      <td>${lockIcon}</td>
+      <td><button onclick="qpbRemoveQ(${i})" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;" title="Remove"><i class="fas fa-times"></i></button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:16px;">No questions.</td></tr>';
+}
+
+function qpbToggleLock(idx) {
+  qpbBuiltQuestions[idx].locked = !qpbBuiltQuestions[idx].locked;
+  qpbRenderPreviewTable();
+}
+
+function qpbRemoveQ(idx) {
+  qpbBuiltQuestions.splice(idx, 1);
+  qpbBuiltQuestions.forEach((q, i) => q.q_no = i + 1);
+  qpbPaperMeta.qCount = qpbBuiltQuestions.length;
+  document.getElementById('qpbPreviewMeta').querySelector('span').innerHTML =
+    `<i class="fas fa-list-ol" style="color:var(--kerala-gold);margin-right:4px;"></i> ${qpbBuiltQuestions.length} Questions`;
+  qpbRenderPreviewTable();
+}
+
+function qpbResetPreview() {
+  document.getElementById('qpbPreviewCard').style.display = 'none';
+  qpbBuiltQuestions = [];
+  qpbSelectedIds.clear();
+  qpbUpdateCounts();
+  qpbRenderPage();
+}
+
+function qpbShowConfigMsg(type, html) {
+  const el = document.getElementById('qpbConfigMsg');
+  el.style.display = 'block';
+  el.style.background = type === 'error' ? '#FFF0EE' : type === 'success' ? '#E8F5EE' : '#EEF3FF';
+  el.style.color      = type === 'error' ? 'var(--kerala-red)' : type === 'success' ? 'var(--kerala-green)' : 'var(--kerala-dark)';
+  el.innerHTML = html;
+}
+
+function qpbShowPublishMsg(type, html) {
+  const el = document.getElementById('qpbPublishMsg');
+  el.style.display = 'block';
+  el.style.background = type === 'error' ? '#FFF0EE' : '#E8F5EE';
+  el.style.color      = type === 'error' ? 'var(--kerala-red)' : 'var(--kerala-green)';
+  el.innerHTML = html;
+}
+
+async function qpbPublish(destination) {
+  // destination: 'massexam' or 'home'
+  if (!db) { qpbShowPublishMsg('error', 'Firebase not connected.'); return; }
+  if (!qpbBuiltQuestions.length) { qpbShowPublishMsg('error', 'No questions in paper.'); return; }
+
+  const meta = { ...qpbPaperMeta };
+  const now = firebase.firestore.FieldValue.serverTimestamp();
+
+  // Always mark as builtPaper = true so home page can exclude if needed
+  // destination 'home' means showOnHome = true; 'massexam' means showOnHome = false
+  const showOnHome = destination === 'home';
+
+  try {
+    // Create a paper document
+    const paperRef = await db.collection('papers').add({
+      title:        meta.title,
+      mainCategory: meta.mainCategory,
+      subCategory:  meta.subCategory,
+      duration:     meta.duration,
+      price:        meta.price,
+      qCount:       qpbBuiltQuestions.length,
+      builtPaper:   true,
+      showOnHome:   showOnHome,
+      createdAt:    now,
+      // For mass exam linking
+      forMassExam:  destination === 'massexam'
+    });
+
+    // Upload questions as subcollection
+    const batch = db.batch();
+    qpbBuiltQuestions.forEach((q, i) => {
+      const qRef = paperRef.collection('questions').doc(String(i + 1).padStart(4, '0'));
+      batch.set(qRef, {
+        q_no:        q.q_no,
+        question_en: q.question_en || '',
+        question_ml: q.question_ml || '',
+        option_a:    q.option_a || '',
+        option_b:    q.option_b || '',
+        option_c:    q.option_c || '',
+        option_d:    q.option_d || '',
+        answer:      q.answer   || '',
+        locked:      q.locked   || false
+      });
+    });
+    await batch.commit();
+
+    if (destination === 'massexam') {
+      // Pre-populate the mass exam paper selector
+      qpbShowPublishMsg('success', `<i class="fas fa-check-circle"></i> Paper "<strong>${meta.title}</strong>" saved to database (ID: ${paperRef.id}) and is available in Mass Exam Manager → "Pick existing paper".`);
+      showToast('Paper built & available for Mass Exam!');
+    } else {
+      qpbShowPublishMsg('success', `<i class="fas fa-check-circle"></i> Paper "<strong>${meta.title}</strong>" published to Home Page.`);
+      showToast('Paper published to home page!');
+    }
+
+    // Refresh built papers list
+    await qpbLoadBuiltPapers();
+
+    // Also refresh the main papers table if visible
+    if (typeof loadAdminData === 'function') {
+      try { await loadPapers(); } catch(e) {}
+    }
+
+  } catch(e) {
+    qpbShowPublishMsg('error', 'Error: ' + e.message);
+  }
+}
+
+async function qpbLoadBuiltPapers() {
+  const tbody = document.getElementById('qpbBuiltTable');
+  if (!tbody || !db) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:16px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
+  try {
+    // Fetch without orderBy to avoid requiring a composite Firestore index.
+    // Sort client-side instead.
+    const snap = await db.collection('papers')
+      .where('builtPaper', '==', true)
+      .limit(50)
+      .get();
+
+    if (snap.empty) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:16px;">No built papers yet.</td></tr>';
+      return;
+    }
+
+    // Sort newest-first in JS
+    const sortedDocs = snap.docs.slice().sort((a, b) => {
+      const ta = a.data().createdAt?.toMillis ? a.data().createdAt.toMillis() : 0;
+      const tb = b.data().createdAt?.toMillis ? b.data().createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+
+    tbody.innerHTML = sortedDocs.map(doc => {
+      const p = doc.data();
+      const created = p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString('en-IN') : '—';
+      const dest = p.showOnHome ? '<span class="badge badge-green"><i class="fas fa-globe"></i> Home</span>'
+                                : '<span class="badge badge-blue"><i class="fas fa-users-cog"></i> Mass Exam</span>';
+      return `<tr>
+        <td style="font-weight:700;font-size:13px;">${escapeHtml(p.title||'—')}</td>
+        <td style="font-size:12px;">${escapeHtml(p.mainCategory||'')}${p.subCategory?' › '+escapeHtml(p.subCategory):''}</td>
+        <td style="text-align:center;font-weight:700;">${p.qCount||0}</td>
+        <td style="text-align:center;">${p.duration||0} min</td>
+        <td style="text-align:center;">₹${p.price||0}</td>
+        <td>${dest}</td>
+        <td style="font-size:12px;color:#888;">${created}</td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-sm" style="background:#EEF3FF;color:var(--kerala-dark);border:1.5px solid var(--border);" onclick="qpbToggleHome('${doc.id}', ${!p.showOnHome})" title="${p.showOnHome ? 'Remove from home' : 'Publish to home'}">
+              <i class="fas fa-${p.showOnHome ? 'eye-slash' : 'eye'}"></i> ${p.showOnHome ? 'Hide from Home' : 'Show on Home'}
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="qpbDeleteBuilt('${doc.id}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--kerala-red);padding:16px;">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function qpbToggleHome(docId, showOnHome) {
+  if (!db) return;
+  try {
+    await db.collection('papers').doc(docId).update({ showOnHome });
+    showToast(showOnHome ? '✅ Paper is now visible on home page.' : '🔒 Paper hidden from home page (Mass Exam only).');
+    // Also refresh the local examPapers cache so home page reflects the change immediately
+    try {
+      const snap = await db.collection('papers').get();
+      if (!snap.empty) {
+        examPapers = snap.docs
+          .map(d => ({id: d.id, ...d.data()}))
+          .filter(p => !(p.builtPaper === true && p.showOnHome !== true));
+      }
+    } catch(e2) {}
+    qpbLoadBuiltPapers();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function qpbDeleteBuilt(docId) {
+  if (!confirm('Delete this built paper? This cannot be undone.')) return;
+  try {
+    // Delete questions subcollection
+    const qSnap = await db.collection('papers').doc(docId).collection('questions').get();
+    const batch = db.batch();
+    qSnap.forEach(d => batch.delete(d.ref));
+    batch.delete(db.collection('papers').doc(docId));
+    await batch.commit();
+    showToast('Paper deleted.');
+    qpbLoadBuiltPapers();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+// Auto-load built papers when panel is shown
+const _origShowAdminPanel = typeof showAdminPanel === 'function' ? showAdminPanel : null;
+// Hook into showAdminPanel via event; we'll call qpbLoadBuiltPapers from a patched version below
+</script>
+
+<script>
 // ─── ADMIN PAGE BOOTSTRAP ─────────────────────
 // On admin.html, auto-show admin panel and gate non-admins
 
@@ -4847,56 +5549,89 @@ function showPage(page) {
 }
 
 // Override auth state handler for admin page
-firebase.auth().onAuthStateChanged(async function(user) {
-  currentUser = user;
-  if (user) {
-    const snap = await db.collection('users').doc(user.uid).get();
-    const data = snap.data() || {};
-    const isSuperAdmin = ADMIN_EMAILS.includes(user.email);
-
-    // Check if user is a sub-admin officer (in Firestore officers collection)
-    let isOfficer = false;
-    if (!isSuperAdmin && db) {
+// Guard: only run if Firebase was successfully initialized
+if (typeof firebase !== 'undefined' && auth) {
+  firebase.auth().onAuthStateChanged(async function(user) {
+    currentUser = user;
+    if (user) {
+      let data = {};
       try {
-        const docId = user.email.replace(/[^a-z0-9]/g, '_');
-        const offSnap = await db.collection('officers').doc(docId).get();
-        isOfficer = offSnap.exists && offSnap.data().active === true;
+        const snap = await db.collection('users').doc(user.uid).get();
+        data = snap.data() || {};
       } catch(e) {}
-    }
-    isAdmin = isSuperAdmin || isOfficer;
+      const isSuperAdmin = ADMIN_EMAILS.includes(user.email);
 
-    // Update nav user display
-    document.getElementById('navUser').style.display = 'flex';
-    document.getElementById('btnLogin').style.display = 'none';
-    document.getElementById('navAvatar').textContent = (data.name || user.email || 'U')[0].toUpperCase();
-    document.getElementById('udName').textContent = data.name || 'Admin';
-    document.getElementById('udEmail').textContent = user.email || '';
-    document.getElementById('cpEmail').textContent = user.email || '';
-    closeAuth();
+      // Check if user is a sub-admin officer (in Firestore officers collection)
+      let isOfficer = false;
+      if (!isSuperAdmin && db) {
+        try {
+          const docId = user.email.replace(/[^a-z0-9]/g, '_');
+          const offSnap = await db.collection('officers').doc(docId).get();
+          isOfficer = offSnap.exists && offSnap.data().active === true;
+        } catch(e) {}
+      }
+      isAdmin = isSuperAdmin || isOfficer;
 
-    if (isAdmin) {
-      document.getElementById('adminGate').style.display = 'none';
-      document.getElementById('page-admin').classList.add('active');
-      loadAdminData();
-      // Apply role-aware sidebar (superadmin gets all panels, officer gets their permitted ones)
-      if (isSuperAdmin) {
-        currentOfficerRoles = null; // null = all panels
-        renderRoleAwareSidebar();
+      // Update nav user display
+      document.getElementById('navUser').style.display = 'flex';
+      document.getElementById('btnLogin').style.display = 'none';
+      document.getElementById('navAvatar').textContent = (data.name || user.email || 'U')[0].toUpperCase();
+      document.getElementById('udName').textContent = data.name || 'Admin';
+      document.getElementById('udEmail').textContent = user.email || '';
+      document.getElementById('cpEmail').textContent = user.email || '';
+      closeAuth();
+
+      if (isAdmin) {
+        // Show admin tab in nav for both super-admins and officers
+        const tabAdmin = document.getElementById('tab-admin');
+        if (tabAdmin) tabAdmin.style.display = 'flex';
+
+        document.getElementById('adminGate').style.display = 'none';
+        // Remove inline display:none if previously set, then let .page.active control visibility
+        document.getElementById('page-admin').style.display = '';
+        document.getElementById('page-admin').classList.add('active');
+        loadAdminData();
+        // Apply role-aware sidebar (superadmin gets all panels, officer gets their permitted ones)
+        if (isSuperAdmin) {
+          currentOfficerRoles = null; // null = all panels
+          renderRoleAwareSidebar();
+        } else {
+          await applyOfficerRoles(user.email);
+        }
       } else {
-        await applyOfficerRoles(user.email);
+        // Not admin or officer — show denied message
+        document.getElementById('adminGate').style.display = 'block';
+        const gc = document.getElementById('adminGateContent');
+        const gd = document.getElementById('adminGateDenied');
+        if (gc) gc.style.display = 'none';
+        if (gd) gd.style.display = 'block';
+        document.getElementById('page-admin').style.display = 'none';
+        document.getElementById('page-admin').classList.remove('active');
       }
     } else {
+      // Not logged in — show sign-in prompt
+      currentUser = null; isAdmin = false;
+      document.getElementById('navUser').style.display = 'none';
+      document.getElementById('btnLogin').style.display = '';
       document.getElementById('adminGate').style.display = 'block';
+      const gc = document.getElementById('adminGateContent');
+      const gd = document.getElementById('adminGateDenied');
+      if (gc) gc.style.display = 'none';
+      if (gd) gd.style.display = 'block';
       document.getElementById('page-admin').style.display = 'none';
     }
-  } else {
-    currentUser = null; isAdmin = false;
-    document.getElementById('navUser').style.display = 'none';
-    document.getElementById('btnLogin').style.display = '';
-    document.getElementById('adminGate').style.display = 'block';
-    document.getElementById('page-admin').style.display = 'none';
-  }
-});
+  });
+} else {
+  // Firebase not available — show gate and login button
+  console.error('Firebase SDK not loaded or config missing. Check network and Firebase config.');
+  document.getElementById('adminGate').style.display = 'block';
+  const _gc = document.getElementById('adminGateContent');
+  const _gd = document.getElementById('adminGateDenied');
+  if (_gc) _gc.style.display = 'none';
+  if (_gd) _gd.style.display = 'block';
+  const loginBtn = document.getElementById('btnLogin');
+  if (loginBtn) loginBtn.style.display = '';
+}
 
 function logout() {
   auth.signOut().then(() => {
