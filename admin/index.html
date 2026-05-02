@@ -1250,7 +1250,6 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
       <h3>Menu</h3>
       <div class="admin-nav-item active" onclick="showAdminPanel('overview')"><i class="fas fa-chart-pie"></i> Overview</div>
       <div class="admin-nav-item" onclick="showAdminPanel('upload')"><i class="fas fa-upload"></i> Upload Questions</div>
-      <div class="admin-nav-item" onclick="showAdminPanel('papers')"><i class="fas fa-file-alt"></i> Manage Papers</div>
       <div class="admin-nav-item" onclick="showAdminPanel('categories')"><i class="fas fa-sitemap"></i> Category Manager</div>
       <div class="admin-nav-item" onclick="showAdminPanel('users')"><i class="fas fa-users"></i> Registered Users</div>
       <div class="admin-nav-item" onclick="showAdminPanel('results')"><i class="fas fa-poll"></i> Results & Analytics</div>
@@ -1259,6 +1258,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
       <div class="admin-nav-item" onclick="showAdminPanel('noticeboard')"><i class="fas fa-bullhorn"></i> Notice Board</div>
       <div class="admin-nav-item" onclick="showAdminPanel('planpricing')"><i class="fas fa-tags"></i> Plan Pricing</div>
       <div class="admin-nav-item" onclick="showAdminPanel('promocodes')"><i class="fas fa-percent"></i> Promo Codes</div>
+      <div class="admin-nav-item" onclick="showAdminPanel('addofficer')"><i class="fas fa-user-shield"></i> Add Officer</div>
     </div>
     <div style="flex:1">
       <!-- Overview -->
@@ -1303,7 +1303,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
             </div>
             <div class="sub-select-wrap">
               <label class="form-label"><i class="fas fa-tag" style="color:var(--kerala-mid)"></i> Sub-category</label>
-              <select id="uploadSubCat" class="form-input" disabled>
+              <select id="uploadSubCat" class="form-input" disabled onchange="loadSub2Opts(document.getElementById('uploadMainCat').value, this.value, 'uploadSub2', '')">
                 <option value="">— Select Main Category first —</option>
               </select>
               <span class="sub-select-label" id="uploadSubCatHint" style="display:none;color:var(--kerala-green)">
@@ -1315,7 +1315,9 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;">
             <div>
               <label class="form-label"><i class="fas fa-tags" style="color:var(--kerala-gold)"></i> 2nd Sub-category <span style="font-weight:400;color:#aaa;">(optional)</span></label>
-              <input class="form-input" type="text" id="uploadSub2" placeholder="e.g. KFC Part I &amp; II and KBM">
+              <select id="uploadSub2" class="form-input" disabled>
+                <option value="">— Select Sub-category first —</option>
+              </select>
             </div>
             <div>
               <label class="form-label"><i class="fas fa-calendar-alt" style="color:var(--kerala-mid)"></i> Date of Test</label>
@@ -1402,17 +1404,16 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
             <a href="#" onclick="downloadSampleCSV('ml')" style="color:var(--kerala-green);font-weight:700;">Malayalam CSV</a>
           </p>
         </div>
-      </div>
-      <!-- Papers -->
-      <div class="admin-panel" id="panel-papers">
         <div class="admin-card">
-          <h3>Manage Question Papers</h3>
+          <h3><i class="fas fa-file-alt" style="color:var(--kerala-gold);margin-right:6px;"></i> Manage Question Papers</h3>
           <div class="table-wrap">
             <table><thead><tr><th>Title</th><th>Category</th><th>Month – Year</th><th>Questions</th><th>Price</th><th>Added</th><th>Actions</th></tr></thead>
             <tbody id="papersTable"></tbody></table>
           </div>
         </div>
       </div>
+      <!-- Papers panel kept for JS compatibility -->
+      <div class="admin-panel" id="panel-papers" style="display:none!important;"></div>
       <!-- Category Manager -->
       <div class="admin-panel" id="panel-categories">
         <div class="admin-card">
@@ -1765,6 +1766,57 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
         </div>
       </div>
 
+      <!-- ─── ADD OFFICER PANEL ─────────────────── -->
+      <div class="admin-panel" id="panel-addofficer">
+
+        <!-- Add new officer card -->
+        <div class="admin-card" style="margin-bottom:16px;">
+          <h3><i class="fas fa-user-shield" style="color:var(--kerala-gold);margin-right:8px;"></i> Add Officer / Sub-Admin</h3>
+          <p style="font-size:13px;color:#666;margin-bottom:20px;">Grant admin-panel access to another person by their email address. Choose which menu sections they are allowed to access.</p>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;align-items:start;">
+            <div>
+              <label class="form-label"><i class="fas fa-envelope" style="color:var(--kerala-gold)"></i> Officer Email Address</label>
+              <input class="form-input" id="officerEmail" type="email" placeholder="officer@example.com">
+            </div>
+            <div>
+              <label class="form-label"><i class="fas fa-id-badge" style="color:var(--kerala-gold)"></i> Display Name <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+              <input class="form-input" id="officerName" type="text" placeholder="e.g. Revenue Officer">
+            </div>
+          </div>
+
+          <!-- Role / menu permissions -->
+          <div style="margin-bottom:18px;">
+            <label class="form-label" style="margin-bottom:10px;display:block;"><i class="fas fa-sliders-h" style="color:var(--kerala-gold)"></i> Permitted Menu Sections <span style="font-size:11px;font-weight:400;color:#888;">(check all that apply)</span></label>
+            <div id="officerRoleGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
+              <!-- Populated by JS from OFFICER_PANELS -->
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="saveOfficer()"><i class="fas fa-user-plus"></i> Add Officer</button>
+            <button class="btn btn-outline" onclick="clearOfficerForm()"><i class="fas fa-times"></i> Clear</button>
+            <span style="font-size:12px;color:#888;">The officer can sign in at admin.html with their own account.</span>
+          </div>
+          <div id="officerFormMsg" style="display:none;margin-top:12px;font-size:13px;font-weight:600;padding:10px 14px;border-radius:8px;"></div>
+        </div>
+
+        <!-- Existing officers table -->
+        <div class="admin-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;"><i class="fas fa-list" style="margin-right:6px;"></i> Current Officers</h3>
+            <button class="btn btn-sm btn-outline" onclick="loadOfficers()"><i class="fas fa-sync"></i> Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Permitted Sections</th><th>Added On</th><th>Actions</th></tr></thead>
+              <tbody id="officersTable"><tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- end panel-addofficer -->
+
     </div>
   </div>
 </div><!-- end page-admin -->
@@ -1908,7 +1960,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
         </div>
         <div>
           <label class="form-label"><i class="fas fa-tag" style="color:var(--kerala-mid)"></i> Sub-category</label>
-          <select id="editSubCat" class="form-input" style="font-size:13px;padding:9px 10px;" disabled>
+          <select id="editSubCat" class="form-input" style="font-size:13px;padding:9px 10px;" disabled onchange="loadSub2Opts(document.getElementById('editMainCat').value, this.value, 'editSub2', '')">
             <option value="">— Select Main Category first —</option>
           </select>
         </div>
@@ -1917,7 +1969,9 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;align-items:start;">
         <div>
           <label class="form-label"><i class="fas fa-tags" style="color:var(--kerala-gold)"></i> 2nd Sub-category <span style="font-weight:400;color:#aaa;">(optional)</span></label>
-          <input class="form-input" type="text" id="editSub2" placeholder="e.g. KFC Part I &amp; II and KBM" style="font-size:13px;">
+          <select class="form-input" id="editSub2" style="font-size:13px;" disabled>
+            <option value="">— Select Sub-category first —</option>
+          </select>
         </div>
         <div>
           <label class="form-label"><i class="fas fa-calendar-alt" style="color:var(--kerala-mid)"></i> Date of Test</label>
@@ -2609,6 +2663,7 @@ function showAdminPanel(panel) {
   const panelEl = document.getElementById('panel-' + panel);
   if (panelEl) panelEl.classList.add('active');
   event.currentTarget.classList.add('active');
+  if (panel === 'upload') loadPapers();
   if (panel === 'users') loadUsers();
   if (panel === 'results') loadResults();
   if (panel === 'papers') loadPapers();
@@ -2618,6 +2673,7 @@ function showAdminPanel(panel) {
   if (panel === 'noticeboard') loadAdminNotices();
   if (panel === 'planpricing') initPlanPricingAdmin();
   if (panel === 'promocodes') loadPromoCodes();
+  if (panel === 'addofficer') { renderOfficerRoleGrid(); loadOfficers(); }
 }
 
 // ─── ADMIN ──────────────────────────────────── (enhanced version defined above)
@@ -2625,6 +2681,8 @@ function showAdminPanel(panel) {
 
 async function loadAdminData() {
   if (!db) { renderDemoAdminStats(); return; }
+  // Pre-load sub-category cache (including sub2 entries) so dropdowns work immediately
+  await loadSubCatCache();
   try {
     const usersSnap = await db.collection('users').get();
     const resultsSnap = await db.collection('results').get();
@@ -2717,12 +2775,14 @@ async function openEditPaper(paperId) {
   }
 
   // 2. Sub-category (load options then preselect)
-  await loadSubCats('editMainCat', 'editSubCat', paper.category !== paper.mainCategory ? paper.category : '');
+  const localSubCat = paper.category !== paper.mainCategory ? paper.category : '';
+  await loadSubCats('editMainCat', 'editSubCat', localSubCat);
+  // Preselect sub2 from local cache
+  loadSub2Opts(mainVal, localSubCat, 'editSub2', paper.sub2 || '');
 
-  // 3. Numeric fields + sub2/date
+  // 3. Numeric fields + date
   document.getElementById('editDuration').value = paper.duration || '';
   document.getElementById('editPrice').value = paper.price !== undefined ? paper.price : 0;
-  document.getElementById('editSub2').value = paper.sub2 || '';
   document.getElementById('editYear').value = paper.year || '';
   const editMonthSel = document.getElementById('editMonth');
   for (let i = 0; i < editMonthSel.options.length; i++) {
@@ -2743,10 +2803,12 @@ async function openEditPaper(paperId) {
             mainCatSel.selectedIndex = i; break;
           }
         }
-        await loadSubCats('editMainCat', 'editSubCat', d.category !== d.mainCategory ? d.category : '');
+        const fsSubCat = d.category !== d.mainCategory ? d.category : '';
+        await loadSubCats('editMainCat', 'editSubCat', fsSubCat);
+        // Preselect sub2 from Firestore data
+        loadSub2Opts(mv, fsSubCat, 'editSub2', d.sub2 || '');
         document.getElementById('editDuration').value = d.duration || '';
         document.getElementById('editPrice').value = d.price !== undefined ? d.price : 0;
-        document.getElementById('editSub2').value = d.sub2 || '';
         document.getElementById('editYear').value = d.year || '';
         for (let i = 0; i < editMonthSel.options.length; i++) {
           if (editMonthSel.options[i].value === (d.month || '')) { editMonthSel.selectedIndex = i; break; }
@@ -3168,6 +3230,7 @@ async function loadSubCats(mainSelectId, subSelectId, preselect) {
       const snap = await db.collection('subcategories').doc(mainCat).get();
       list = snap.exists ? (snap.data().list || []) : [];
       subCatCache[mainCat] = list;
+      if (snap.exists && snap.data().sub2) sub2Cache[mainCat] = snap.data().sub2;
     } catch(e) { list = []; }
   }
   list = list || [];
@@ -3183,6 +3246,26 @@ async function loadSubCats(mainSelectId, subSelectId, preselect) {
     if (hint) hint.style.display = 'none';
   }
   subSel.disabled = false;
+
+  // Determine the corresponding 2nd sub-category select id
+  const sub2SelectId = subSelectId === 'uploadSubCat' ? 'uploadSub2'
+                     : subSelectId === 'editSubCat'   ? 'editSub2'
+                     : null;
+  if (sub2SelectId) loadSub2Opts(mainCat, preselect || '', sub2SelectId, '');
+}
+
+function loadSub2Opts(mainCat, subCat, sub2SelectId, preselect) {
+  const sel = document.getElementById(sub2SelectId);
+  if (!sel) return;
+  const list = (sub2Cache[mainCat] && sub2Cache[mainCat][subCat]) || [];
+  if (!subCat || list.length === 0) {
+    sel.innerHTML = '<option value="">— None —</option>';
+    sel.disabled = true;
+    return;
+  }
+  sel.innerHTML = '<option value="">— Select 2nd Sub-category (optional) —</option>' +
+    list.map(t => `<option value="${t}" ${t === preselect ? 'selected' : ''}>${t}</option>`).join('');
+  sel.disabled = false;
 }
 
 let activeCatManagerMain = null;
@@ -4504,6 +4587,254 @@ async function deletePromoCode(id) {
 
 
 // showAdminPanel extended above with new panel hooks
+
+// ─── OFFICER / SUB-ADMIN SYSTEM ──────────────────────────────────────────────
+
+// Master list of every panel with its label and icon
+const OFFICER_PANELS = [
+  { id: 'overview',    label: 'Overview',           icon: 'fa-chart-pie' },
+  { id: 'upload',      label: 'Upload Questions',    icon: 'fa-upload' },
+  { id: 'categories',  label: 'Category Manager',    icon: 'fa-sitemap' },
+  { id: 'users',       label: 'Registered Users',    icon: 'fa-users' },
+  { id: 'results',     label: 'Results & Analytics', icon: 'fa-poll' },
+  { id: 'massexam',    label: 'Mass Exam Manager',   icon: 'fa-users-cog' },
+  { id: 'payments',    label: 'Payments',            icon: 'fa-money-bill-wave' },
+  { id: 'noticeboard', label: 'Notice Board',        icon: 'fa-bullhorn' },
+  { id: 'planpricing', label: 'Plan Pricing',        icon: 'fa-tags' },
+  { id: 'promocodes',  label: 'Promo Codes',         icon: 'fa-percent' },
+];
+
+// Renders the checkboxes in the Add Officer form
+function renderOfficerRoleGrid() {
+  const grid = document.getElementById('officerRoleGrid');
+  if (!grid) return;
+  grid.innerHTML = OFFICER_PANELS.map(p => `
+    <label style="display:flex;align-items:center;gap:9px;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:var(--bg-body);font-size:13px;font-weight:600;color:var(--text-primary);transition:background .15s;" onmouseenter="this.style.background='#EEF3FF'" onmouseleave="this.style.background='var(--bg-body)'">
+      <input type="checkbox" id="role_${p.id}" value="${p.id}" style="width:16px;height:16px;accent-color:var(--kerala-dark);cursor:pointer;flex-shrink:0;">
+      <i class="fas ${p.icon}" style="font-size:14px;color:var(--kerala-gold);width:18px;text-align:center;"></i>
+      ${p.label}
+    </label>`).join('');
+}
+
+function clearOfficerForm() {
+  document.getElementById('officerEmail').value = '';
+  document.getElementById('officerName').value = '';
+  OFFICER_PANELS.forEach(p => {
+    const cb = document.getElementById('role_' + p.id);
+    if (cb) cb.checked = false;
+  });
+  const msg = document.getElementById('officerFormMsg');
+  if (msg) msg.style.display = 'none';
+}
+
+function showOfficerMsg(type, html) {
+  const el = document.getElementById('officerFormMsg');
+  if (!el) return;
+  const styles = {
+    success: 'background:#E8F5EE;color:var(--kerala-green);border:1.5px solid #81C784;',
+    error:   'background:#FFF0EE;color:var(--kerala-red);border:1.5px solid #FFCDD2;',
+  };
+  el.style.cssText = `display:block;margin-top:12px;font-size:13px;font-weight:600;padding:10px 14px;border-radius:8px;${styles[type]||styles.error}`;
+  el.innerHTML = html;
+}
+
+async function saveOfficer() {
+  if (!db) { showOfficerMsg('error', 'Database not connected.'); return; }
+  const email = (document.getElementById('officerEmail').value || '').trim().toLowerCase();
+  const name  = (document.getElementById('officerName').value  || '').trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showOfficerMsg('error', '<i class="fas fa-exclamation-circle"></i> Please enter a valid email address.');
+    return;
+  }
+  const roles = OFFICER_PANELS.map(p => p.id).filter(id => {
+    const cb = document.getElementById('role_' + id);
+    return cb && cb.checked;
+  });
+  if (!roles.length) {
+    showOfficerMsg('error', '<i class="fas fa-exclamation-circle"></i> Please select at least one permitted menu section.');
+    return;
+  }
+  try {
+    const docId = email.replace(/[^a-z0-9]/g, '_');
+    await db.collection('officers').doc(docId).set({
+      email, name: name || email,
+      roles,
+      addedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      addedBy: currentUser?.email || 'superadmin',
+      active: true
+    });
+    showOfficerMsg('success', `<i class="fas fa-check-circle"></i> Officer <strong>${escapeHtml(name||email)}</strong> added successfully with ${roles.length} permitted section${roles.length!==1?'s':''}.`);
+    loadOfficers();
+    // Clear email/name but keep roles for quick repeated entry
+    document.getElementById('officerEmail').value = '';
+    document.getElementById('officerName').value = '';
+  } catch(e) { showOfficerMsg('error', 'Error: ' + e.message); }
+}
+
+async function loadOfficers() {
+  const tbody = document.getElementById('officersTable');
+  if (!tbody || !db) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
+  try {
+    const snap = await db.collection('officers').orderBy('addedAt', 'desc').get();
+    if (snap.empty) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No officers added yet.</td></tr>';
+      return;
+    }
+    const panelMap = Object.fromEntries(OFFICER_PANELS.map(p => [p.id, p]));
+    tbody.innerHTML = snap.docs.map(doc => {
+      const o = doc.data();
+      const addedStr = o.addedAt?.toDate ? o.addedAt.toDate().toLocaleDateString('en-IN') : '—';
+      const roleChips = (o.roles || []).map(id => {
+        const p = panelMap[id];
+        return p ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#EEF3FF;color:var(--kerala-dark);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;margin:2px;border:1px solid var(--border);"><i class="fas ${p.icon}" style="font-size:10px;color:var(--kerala-gold);"></i>${p.label}</span>` : '';
+      }).join('');
+      const statusBadge = o.active
+        ? `<span style="background:#E8F5EE;color:var(--kerala-green);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">Active</span>`
+        : `<span style="background:#FFF0EE;color:var(--kerala-red);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">Disabled</span>`;
+      return `<tr>
+        <td style="font-weight:700;">${escapeHtml(o.name||'—')} ${statusBadge}</td>
+        <td style="font-size:12px;color:#555;">${escapeHtml(o.email||'—')}</td>
+        <td style="max-width:320px;">${roleChips}</td>
+        <td style="font-size:12px;color:#888;">${addedStr}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-sm" style="background:#EEF3FF;color:var(--kerala-dark);border:1.5px solid var(--border);margin-right:4px;" onclick="editOfficer('${doc.id}')"><i class="fas fa-edit"></i></button>
+          ${o.active
+            ? `<button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;border:1.5px solid #FFB74D;margin-right:4px;" onclick="toggleOfficerActive('${doc.id}',false)"><i class="fas fa-ban"></i></button>`
+            : `<button class="btn btn-sm" style="background:#E8F5EE;color:var(--kerala-green);border:1.5px solid #81C784;margin-right:4px;" onclick="toggleOfficerActive('${doc.id}',true)"><i class="fas fa-check"></i></button>`
+          }
+          <button class="btn btn-sm btn-danger" onclick="deleteOfficer('${doc.id}')"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--kerala-red);padding:16px;">${e.message}</td></tr>`;
+  }
+}
+
+async function editOfficer(docId) {
+  if (!db) return;
+  try {
+    const snap = await db.collection('officers').doc(docId).get();
+    if (!snap.exists) { showToast('Officer not found.'); return; }
+    const o = snap.data();
+    document.getElementById('officerEmail').value = o.email || '';
+    document.getElementById('officerName').value  = o.name  || '';
+    OFFICER_PANELS.forEach(p => {
+      const cb = document.getElementById('role_' + p.id);
+      if (cb) cb.checked = (o.roles || []).includes(p.id);
+    });
+    // Switch save button to update mode
+    const btn = document.querySelector('#panel-addofficer .btn-primary');
+    if (btn) {
+      btn.innerHTML = '<i class="fas fa-save"></i> Update Officer';
+      btn.setAttribute('onclick', `updateOfficer('${docId}')`);
+    }
+    showOfficerMsg('success', '<i class="fas fa-info-circle"></i> Editing officer — update the fields and click <strong>Update Officer</strong>.');
+    document.getElementById('panel-addofficer').scrollIntoView({ behavior: 'smooth' });
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function updateOfficer(docId) {
+  if (!db) return;
+  const email = (document.getElementById('officerEmail').value || '').trim().toLowerCase();
+  const name  = (document.getElementById('officerName').value  || '').trim();
+  if (!email) { showOfficerMsg('error', 'Email is required.'); return; }
+  const roles = OFFICER_PANELS.map(p => p.id).filter(id => {
+    const cb = document.getElementById('role_' + id);
+    return cb && cb.checked;
+  });
+  if (!roles.length) { showOfficerMsg('error', 'Select at least one menu section.'); return; }
+  try {
+    await db.collection('officers').doc(docId).update({ email, name: name || email, roles });
+    showOfficerMsg('success', '<i class="fas fa-check-circle"></i> Officer updated successfully.');
+    loadOfficers();
+    // Reset button back to Add mode
+    const btn = document.querySelector('#panel-addofficer .btn-primary');
+    if (btn) { btn.innerHTML = '<i class="fas fa-user-plus"></i> Add Officer'; btn.setAttribute('onclick', 'saveOfficer()'); }
+  } catch(e) { showOfficerMsg('error', 'Error: ' + e.message); }
+}
+
+async function toggleOfficerActive(docId, active) {
+  try {
+    await db.collection('officers').doc(docId).update({ active });
+    showToast(active ? 'Officer re-enabled.' : 'Officer disabled.');
+    loadOfficers();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function deleteOfficer(docId) {
+  if (!confirm('Remove this officer? They will lose admin access.')) return;
+  try {
+    await db.collection('officers').doc(docId).delete();
+    showToast('Officer removed.');
+    loadOfficers();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+// ─── ROLE-AWARE SIDEBAR: apply officer's permitted panels on login ─────────────
+// Called from the auth state handler after officer record is confirmed
+let currentOfficerRoles = null; // null = superadmin (all panels)
+
+async function applyOfficerRoles(email) {
+  if (!db) return;
+  try {
+    const docId = email.replace(/[^a-z0-9]/g, '_');
+    const snap = await db.collection('officers').doc(docId).get();
+    if (snap.exists && snap.data().active) {
+      currentOfficerRoles = snap.data().roles || [];
+    } else {
+      currentOfficerRoles = null;
+    }
+  } catch(e) { currentOfficerRoles = null; }
+  renderRoleAwareSidebar();
+}
+
+function renderRoleAwareSidebar() {
+  const ALL_NAV = [
+    { id: 'overview',    label: 'Overview',           icon: 'fa-chart-pie',       alwaysShow: true },
+    { id: 'upload',      label: 'Upload Questions',    icon: 'fa-upload' },
+    { id: 'categories',  label: 'Category Manager',    icon: 'fa-sitemap' },
+    { id: 'users',       label: 'Registered Users',    icon: 'fa-users' },
+    { id: 'results',     label: 'Results & Analytics', icon: 'fa-poll' },
+    { id: 'massexam',    label: 'Mass Exam Manager',   icon: 'fa-users-cog' },
+    { id: 'payments',    label: 'Payments',            icon: 'fa-money-bill-wave' },
+    { id: 'noticeboard', label: 'Notice Board',        icon: 'fa-bullhorn' },
+    { id: 'planpricing', label: 'Plan Pricing',        icon: 'fa-tags' },
+    { id: 'promocodes',  label: 'Promo Codes',         icon: 'fa-percent' },
+    { id: 'addofficer',  label: 'Add Officer',         icon: 'fa-user-shield',     superadminOnly: true },
+  ];
+
+  const sidebar = document.querySelector('.admin-sidebar');
+  if (!sidebar) return;
+
+  const isSuperAdmin = currentOfficerRoles === null;
+
+  const items = ALL_NAV
+    .filter(n => {
+      if (n.superadminOnly) return isSuperAdmin;
+      if (n.alwaysShow)     return true;
+      if (isSuperAdmin)     return true;
+      return currentOfficerRoles.includes(n.id);
+    })
+    .map((n, idx) => `<div class="admin-nav-item${idx === 0 ? ' active' : ''}" onclick="showAdminPanel('${n.id}')"><i class="fas ${n.icon}"></i> ${n.label}</div>`)
+    .join('');
+
+  sidebar.innerHTML = `<h3>Menu</h3>${items}`;
+
+  // Show the first permitted panel automatically
+  const first = ALL_NAV.find(n => {
+    if (n.superadminOnly) return isSuperAdmin;
+    if (n.alwaysShow)     return true;
+    if (isSuperAdmin)     return true;
+    return currentOfficerRoles.includes(n.id);
+  });
+  if (first) {
+    const panelEl = document.getElementById('panel-' + first.id);
+    document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+    if (panelEl) panelEl.classList.add('active');
+  }
+}
 </script>
 
 <script>
@@ -4521,7 +4852,18 @@ firebase.auth().onAuthStateChanged(async function(user) {
   if (user) {
     const snap = await db.collection('users').doc(user.uid).get();
     const data = snap.data() || {};
-    isAdmin = ADMIN_EMAILS.includes(user.email);
+    const isSuperAdmin = ADMIN_EMAILS.includes(user.email);
+
+    // Check if user is a sub-admin officer (in Firestore officers collection)
+    let isOfficer = false;
+    if (!isSuperAdmin && db) {
+      try {
+        const docId = user.email.replace(/[^a-z0-9]/g, '_');
+        const offSnap = await db.collection('officers').doc(docId).get();
+        isOfficer = offSnap.exists && offSnap.data().active === true;
+      } catch(e) {}
+    }
+    isAdmin = isSuperAdmin || isOfficer;
 
     // Update nav user display
     document.getElementById('navUser').style.display = 'flex';
@@ -4536,6 +4878,13 @@ firebase.auth().onAuthStateChanged(async function(user) {
       document.getElementById('adminGate').style.display = 'none';
       document.getElementById('page-admin').classList.add('active');
       loadAdminData();
+      // Apply role-aware sidebar (superadmin gets all panels, officer gets their permitted ones)
+      if (isSuperAdmin) {
+        currentOfficerRoles = null; // null = all panels
+        renderRoleAwareSidebar();
+      } else {
+        await applyOfficerRoles(user.email);
+      }
     } else {
       document.getElementById('adminGate').style.display = 'block';
       document.getElementById('page-admin').style.display = 'none';
