@@ -168,20 +168,20 @@ body { font-family: 'Raleway', 'Noto Sans Malayalam', sans-serif; background: va
 
 /* ─── CATEGORY MANAGER ─────────────────────── */
 .cat-manager-grid {
-  display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start;
+  display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start;
 }
 .cat-list-panel {
   background: var(--bg-body); border-radius: var(--radius); border: 1.5px solid var(--border);
-  overflow: hidden;
+  overflow: visible; /* allow action buttons to be fully visible */
 }
 .cat-list-header {
   background: var(--kerala-dark); color: white; padding: 12px 16px;
   font-size: 13px; font-weight: 700; letter-spacing: .5px;
 }
 .cat-list-item {
-  padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600;
-  border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
-  transition: background .15s; color: var(--text-primary);
+  padding: 8px 10px; cursor: pointer; font-size: 13px; font-weight: 600;
+  border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px;
+  transition: background .15s; color: var(--text-primary); min-width: 0;
 }
 .cat-list-item:hover { background: #EEF3FF; }
 .cat-list-item.active { background: #EEF3FF; color: var(--kerala-dark); border-left: 3px solid var(--kerala-gold); }
@@ -2871,7 +2871,11 @@ function showAdminPanel(panel) {
   if (panel === 'users') loadUsers();
   if (panel === 'results') loadResults();
   if (panel === 'papers') loadPapers();
-  if (panel === 'categories') loadCategoryManager();
+  if (panel === 'categories') {
+    loadMainCategories().then(() => {
+      loadCategoryManager();
+    });
+  }
   if (panel === 'massexam') { populateMePaperSelect(); loadMeAdminTable(); fetchNextKde(); }
   if (panel === 'payments') loadPayments();
   if (panel === 'noticeboard') loadAdminNotices();
@@ -3516,6 +3520,28 @@ let activeCatManagerMain = null;
 // Editable main categories (starts from MAIN_CATEGORIES, can be modified at runtime)
 let editableMainCategories = [...MAIN_CATEGORIES];
 
+
+// ─── MAIN CATEGORY PERSISTENCE ──────────────────────────────────────────
+async function saveMainCategories() {
+  if (!db) return;
+  try {
+    await db.collection('settings').doc('mainCategories').set({
+      list: editableMainCategories
+    });
+  } catch(e) { console.warn('saveMainCategories error:', e); }
+}
+
+async function loadMainCategories() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('settings').doc('mainCategories').get();
+    if (snap.exists && Array.isArray(snap.data().list) && snap.data().list.length) {
+      editableMainCategories = snap.data().list;
+    }
+    // else keep the hardcoded MAIN_CATEGORIES default
+  } catch(e) {}
+}
+
 function loadCategoryManager() {
   const listEl = document.getElementById('catManagerList');
   const items = editableMainCategories.map((cat, idx) => {
@@ -3524,12 +3550,14 @@ function loadCategoryManager() {
     const esc = cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     return `<div class="cat-list-item ${activeCatManagerMain === cat ? 'active' : ''}" onclick="selectCatManager('${esc}')">
       <span class="cat-num">${num}.</span>
-      <span style="font-size:15px;">${icon}</span>
-      <span style="flex:1;">${cat}</span>
-      <span style="font-size:11px;color:#bbb;">${(subCatCache[cat]||[]).length > 0 ? (subCatCache[cat].length) + ' sub' : ''}</span>
-      <button class="cat-edit-btn edit" onclick="event.stopPropagation();editCatIcon('${esc}', this)" title="Change Icon" style="font-size:14px;">🎨</button>
-      <button class="cat-edit-btn edit" onclick="event.stopPropagation();editMainCat(${idx})" title="Rename"><i class="fas fa-pencil-alt"></i></button>
-      <button class="cat-edit-btn del" onclick="event.stopPropagation();deleteMainCat(${idx})" title="Delete"><i class="fas fa-trash"></i></button>
+      <span style="font-size:15px;flex-shrink:0;">${icon}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${cat}">${cat}</span>
+      <span style="font-size:10px;color:#bbb;flex-shrink:0;">${(subCatCache[cat]||[]).length > 0 ? (subCatCache[cat].length) + ' sub' : ''}</span>
+      <div style="display:flex;align-items:center;gap:2px;flex-shrink:0;" onclick="event.stopPropagation()">
+        <button class="cat-edit-btn edit" onclick="editCatIcon('${esc}', this)" title="Change Icon" style="font-size:13px;line-height:1;padding:4px 5px;">🎨</button>
+        <button class="cat-edit-btn edit" onclick="editMainCat(${idx})" title="Rename" style="padding:4px 5px;"><i class="fas fa-pencil-alt"></i></button>
+        <button class="cat-edit-btn del" onclick="deleteMainCat(${idx})" title="Delete" style="padding:4px 5px;"><i class="fas fa-trash"></i></button>
+      </div>
     </div>`;
   }).join('');
   listEl.innerHTML = `<div class="cat-list-header" style="display:flex;align-items:center;justify-content:space-between;">
@@ -3632,8 +3660,9 @@ async function addMainCat() {
   if (editableMainCategories.includes(val)) { showToast('Category already exists.'); return; }
   editableMainCategories.push(val);
   subCatCache[val] = [];
-  // Save icon
+  // Save icon and persist category list
   await saveCategoryIcon(val, icon);
+  await saveMainCategories();
   input.value = '';
   if (iconInp) iconInp.value = '';
   loadCategoryManager();
@@ -3649,6 +3678,7 @@ function editMainCat(idx) {
   editableMainCategories[idx] = trimmed;
   if (subCatCache[oldName]) { subCatCache[trimmed] = subCatCache[oldName]; delete subCatCache[oldName]; }
   if (activeCatManagerMain === oldName) activeCatManagerMain = trimmed;
+  saveMainCategories();
   loadCategoryManager();
   showToast('✅ Renamed to "' + trimmed + '"');
 }
@@ -3659,6 +3689,7 @@ function deleteMainCat(idx) {
   editableMainCategories.splice(idx, 1);
   delete subCatCache[cat];
   if (activeCatManagerMain === cat) { activeCatManagerMain = null; document.getElementById('subcatPanel').innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:30px 0;">← Select a main category</div>'; }
+  saveMainCategories();
   loadCategoryManager();
   showToast('Deleted "' + cat + '"');
 }
@@ -3785,7 +3816,9 @@ async function removeSubCat(cat, idx) {
       await db.collection('subcategories').doc(cat).set({ list: subCatCache[cat], sub2: sub2Cache[cat] || {} });
     } catch(e) {}
   }
-  loadCategoryManager();
+  // Re-render BOTH the sidebar list AND the subcat panel so the tag disappears immediately
+  loadCategoryManager();          // refreshes the left sidebar (sub count badge)
+  renderSubcatPanel(cat);         // refreshes the right panel (removes the deleted tag)
   showToast('Sub-category removed.');
 }
 
@@ -3807,6 +3840,7 @@ async function editSubCatInline(cat, idx) {
     } catch(e) {}
   }
   loadCategoryManager();
+  renderSubcatPanel(cat);   // refresh right panel so renamed tag shows immediately
   showToast('✅ Renamed to "' + trimmed + '"');
 }
 
