@@ -1876,13 +1876,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
           <label class="form-label"><i class="fas fa-layer-group" style="color:var(--kerala-gold)"></i> Main Category</label>
           <select id="editMainCat" class="form-input" style="font-size:13px;padding:9px 10px;" onchange="loadSubCats('editMainCat','editSubCat')">
             <option value="">— Select —</option>
-            <option>Account Test</option><option>Revenue</option><option>Forest</option>
-            <option>Panchayath</option><option>Registration</option><option>Prisons</option>
-            <option>Judiciary</option><option>Social Justice</option><option>KSEB</option>
-            <option>Local Fund Audit</option><option>Motor Vehicles</option><option>Labour</option>
-            <option>Excise</option><option>State Goods &amp; Service Tax (GST)</option><option>PWD</option>
-            <option>Municipality</option><option>Co-operative</option><option>Police</option>
-            <option>Employment Exchange</option>
+
           </select>
         </div>
         <div>
@@ -4358,6 +4352,8 @@ async function loadCategoryIcons() {
     const snap = await db.collection('settings').doc('categoryIcons').get();
     if (snap.exists) Object.assign(CATEGORY_ICONS, snap.data() || {});
   } catch(e) {}
+  // Refresh dropdowns with updated category list
+  populateHomeCategoryDropdowns();
 }
 
 async function seedJudiciarySubcat() {
@@ -4384,6 +4380,18 @@ async function loadMainCategories() {
       snap.data().list.forEach(c => MAIN_CATEGORIES.push(c));
     }
   } catch(e) {}
+}
+
+// ─── POPULATE MAIN CATEGORY DROPDOWNS (home page) ────────────────────────
+function populateHomeCategoryDropdowns() {
+  const ids = ['editMainCat'];
+  ids.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Select —</option>' +
+      MAIN_CATEGORIES.map(c => `<option value="${c}"${c===current?' selected':''}>${c}</option>`).join('');
+  });
 }
 
 async function loadSubCatCache() {
@@ -4435,7 +4443,7 @@ async function init() {
           .filter(p => !(p.builtPaper === true && p.showOnHome !== true));
       }
     } catch(e) {}
-    await loadMainCategories();
+    await loadMainCategories(); // also calls populateHomeCategoryDropdowns
     await loadSubCatCache();
     await seedJudiciarySubcat();
     await loadCategoryIcons();
