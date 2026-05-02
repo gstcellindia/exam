@@ -2385,20 +2385,47 @@ async function doChangePassword() {
 
 // Auth state observer
 if (auth) {
-  auth.onAuthStateChanged(user => {
+  auth.onAuthStateChanged(async function(user) {
     currentUser = user;
     if (user) {
-      isAdmin = ADMIN_EMAILS.includes(user.email);
+      // 1. Immediately check super-admin and update UI
+      const isSuperAdmin = ADMIN_EMAILS.includes(user.email);
+      isAdmin = isSuperAdmin;
+
       document.getElementById('navUser').style.display = 'flex';
       document.getElementById('btnLogin').style.display = 'none';
       const initials = (user.displayName || user.email || 'U')[0].toUpperCase();
       document.getElementById('navAvatar').textContent = initials;
       document.getElementById('udName').textContent = user.displayName || user.email || 'User';
       document.getElementById('udEmail').textContent = user.email || '';
-      if (isAdmin) { const adminLink = document.getElementById('adminPageLink'); if(adminLink) adminLink.style.display='flex'; }
       document.getElementById('tab-plan').style.display = 'flex';
+
+      // Show admin link immediately if super-admin
+      if (isSuperAdmin) {
+        const adminLink = document.getElementById('adminPageLink');
+        if (adminLink) adminLink.style.display = 'flex';
+      }
+
+      // 2. Also check Firestore officers collection for sub-admin officers
+      if (!isSuperAdmin && db) {
+        try {
+          const docId = user.email.replace(/[^a-z0-9]/g, '_');
+          const offSnap = await db.collection('officers').doc(docId).get();
+          if (offSnap.exists && offSnap.data().active === true) {
+            isAdmin = true;
+            const adminLink = document.getElementById('adminPageLink');
+            if (adminLink) adminLink.style.display = 'flex';
+          }
+        } catch(e) {}
+      }
+
       loadUserPurchases(user.uid);
       loadFavorites();
+    } else {
+      currentUser = null;
+      isAdmin = false;
+      const adminLink = document.getElementById('adminPageLink');
+      if (adminLink) adminLink.style.display = 'none';
     }
   });
 }
