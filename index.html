@@ -4226,7 +4226,12 @@ async function init() {
   if (db) {
     try {
       const snap = await db.collection('papers').get();
-      if (!snap.empty) examPapers = snap.docs.map(d => ({id:d.id, ...d.data()}));
+      if (!snap.empty) {
+        // Exclude built papers that are NOT marked showOnHome — they are for Mass Exam only
+        examPapers = snap.docs
+          .map(d => ({id: d.id, ...d.data()}))
+          .filter(p => !(p.builtPaper === true && p.showOnHome !== true));
+      }
     } catch(e) {}
     await loadSubCatCache();
   }
