@@ -2847,9 +2847,11 @@ function examCardHTML(e, showFavBtn = true) {
         <div class="exam-card-meta-row">
           <span class="badge badge-blue">${e.qCount} Questions</span>
           <span class="badge badge-gold">${e.duration} min</span>
-          ${e.year ? `<span class="badge badge-green">${e.year}</span>` : ''}
           ${priceBadge}
         </div>
+        ${(e.month || e.year) ? `<div class="exam-card-meta-row" style="margin-top:3px;">
+          <span class="badge badge-green"><i class="fas fa-calendar-alt" style="font-size:9px;margin-right:4px;opacity:.7;"></i>${[e.month, e.year].filter(Boolean).join(' – ')}</span>
+        </div>` : ''}
       </div>
     </div>
     <h3>${stripMonthYear(e.title)}</h3>
