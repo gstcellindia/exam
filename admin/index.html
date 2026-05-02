@@ -2358,7 +2358,7 @@ const MAIN_CATEGORIES = [
   'PWD', 'Municipality', 'Co-operative', 'Police', 'Employment Exchange'
 ];
 
-const CATEGORY_ICONS = {
+let CATEGORY_ICONS = {
   'Account Test': '📊', 'Revenue': '🏦', 'Forest': '🌳', 'Panchayath': '🏘️',
   'Registration': '📝', 'Prisons': '🔐', 'Judiciary': '⚖️', 'Social Justice': '🤝',
   'KSEB': '⚡', 'Local Fund Audit': '🔍', 'Motor Vehicles': '🚗', 'Labour': '👷',
@@ -3409,6 +3409,44 @@ let subCatCache = {};
 // 2nd sub-category cache: { 'Account Test': { 'KFC Part I': ['KFC Vol I', ...], ... }, ... }
 let sub2Cache = {};
 
+async function seedJudiciarySubcat() {
+  // One-time: ensure 'Criminal Judiciary' exists under Judiciary
+  if (!db) return;
+  try {
+    const snap = await db.collection('subcategories').doc('Judiciary').get();
+    const existing = snap.exists ? (snap.data().list || []) : [];
+    if (!existing.includes('Criminal Judiciary')) {
+      const updated = [...existing, 'Criminal Judiciary'];
+      const sub2 = snap.exists ? (snap.data().sub2 || {}) : {};
+      await db.collection('subcategories').doc('Judiciary').set({ list: updated, sub2 });
+      // Update local cache immediately
+      if (!subCatCache['Judiciary']) subCatCache['Judiciary'] = [];
+      subCatCache['Judiciary'] = updated;
+      console.log('✅ Criminal Judiciary added under Judiciary');
+    }
+  } catch(e) { console.warn('seedJudiciarySubcat error:', e); }
+}
+
+async function loadCategoryIcons() {
+  // Load custom icons saved in Firestore 'categoryIcons' doc, merge into CATEGORY_ICONS
+  if (!db) return;
+  try {
+    const snap = await db.collection('settings').doc('categoryIcons').get();
+    if (snap.exists) {
+      const saved = snap.data() || {};
+      Object.assign(CATEGORY_ICONS, saved); // merge: saved icons override defaults
+    }
+  } catch(e) {}
+}
+
+async function saveCategoryIcon(cat, icon) {
+  if (!db) return;
+  try {
+    CATEGORY_ICONS[cat] = icon;
+    await db.collection('settings').doc('categoryIcons').set(CATEGORY_ICONS);
+  } catch(e) { showToast('Icon save error: ' + e.message); }
+}
+
 async function loadSubCatCache() {
   if (!db) return;
   try {
@@ -3489,6 +3527,7 @@ function loadCategoryManager() {
       <span style="font-size:15px;">${icon}</span>
       <span style="flex:1;">${cat}</span>
       <span style="font-size:11px;color:#bbb;">${(subCatCache[cat]||[]).length > 0 ? (subCatCache[cat].length) + ' sub' : ''}</span>
+      <button class="cat-edit-btn edit" onclick="event.stopPropagation();editCatIcon('${esc}', this)" title="Change Icon" style="font-size:14px;">🎨</button>
       <button class="cat-edit-btn edit" onclick="event.stopPropagation();editMainCat(${idx})" title="Rename"><i class="fas fa-pencil-alt"></i></button>
       <button class="cat-edit-btn del" onclick="event.stopPropagation();deleteMainCat(${idx})" title="Delete"><i class="fas fa-trash"></i></button>
     </div>`;
@@ -3498,23 +3537,107 @@ function loadCategoryManager() {
     <span style="font-size:11px;opacity:.7;">${editableMainCategories.length} total</span>
   </div>
   ${items}
-  <div class="add-main-cat-row">
-    <input id="newMainCatInput" placeholder="New category name…" onkeydown="if(event.key==='Enter') addMainCat()">
+  <div class="add-main-cat-row" style="flex-wrap:wrap;gap:6px;padding:10px 12px;">
+    <input id="newMainCatIcon" placeholder="😀" maxlength="4"
+      style="width:52px;text-align:center;font-size:18px;padding:5px;border-radius:6px;border:1.5px solid var(--border);flex-shrink:0;cursor:pointer;"
+      title="Click to pick an emoji icon" onclick="openIconPicker('newMainCatIcon')" readonly>
+    <input id="newMainCatInput" placeholder="New category name…"
+      style="flex:1;min-width:120px;"
+      onkeydown="if(event.key==='Enter') addMainCat()">
     <button class="btn btn-primary btn-sm" onclick="addMainCat()"><i class="fas fa-plus"></i> Add</button>
   </div>`;
   if (activeCatManagerMain) renderSubcatPanel(activeCatManagerMain);
 }
 
-function addMainCat() {
-  const input = document.getElementById('newMainCatInput');
-  const val = (input.value || '').trim();
+
+// ─── CATEGORY ICON PICKER ────────────────────────────────────────────────
+const EMOJI_SUGGESTIONS = [
+  '📊','📈','📉','📋','📝','📄','📁','📂','🗂️','🗃️',
+  '⚖️','🏛️','🔐','🔒','🔑','🗝️','👮','👷','🤝','🤲',
+  '🏘️','🏙️','🏗️','🏦','🏢','🌳','🌿','🌾','⚡','💡',
+  '🚗','🚌','🛣️','🚦','🚧','🍶','🧾','💼','💰','💳',
+  '🔍','🔎','📌','📍','🎯','🏆','🏅','⭐','✅','❓',
+  '🤷','👨‍⚖️','👨‍💼','👨‍🌾','👨‍🏭','🧑‍💻','👩‍⚕️','🧑‍🏫','🏋️','🎓',
+  '🏥','🏫','🏬','🏩','⛪','🕌','🕍','🏟️','🎪','🎭',
+  '🌏','🗺️','🧭','🌐','🛂','🛃','🛄','🛅','🚀','✈️'
+];
+
+let _iconPickerTarget = null; // input element id to fill
+
+function openIconPicker(inputId) {
+  _iconPickerTarget = inputId;
+  const modal = document.getElementById('iconPickerModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  document.getElementById('iconPickerSearch').value = '';
+  renderIconGrid('');
+}
+
+function closeIconPicker() {
+  const modal = document.getElementById('iconPickerModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderIconGrid(filter) {
+  const grid = document.getElementById('iconPickerGrid');
+  if (!grid) return;
+  const emojis = filter
+    ? EMOJI_SUGGESTIONS.filter(e => e.includes(filter))
+    : EMOJI_SUGGESTIONS;
+  grid.innerHTML = emojis.map(e =>
+    `<button onclick="pickIcon('${e}')" style="font-size:22px;background:none;border:1.5px solid var(--border);border-radius:8px;width:44px;height:44px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;" onmouseenter="this.style.background='#EEF3FF'" onmouseleave="this.style.background='none'">${e}</button>`
+  ).join('');
+}
+
+function pickIcon(emoji) {
+  if (_iconPickerTarget) {
+    const el = document.getElementById(_iconPickerTarget);
+    if (el) el.value = emoji;
+    // If it's inline editing (editCatIcon flow), auto-save
+    if (_iconPickerTarget.startsWith('inlineIcon_')) {
+      const cat = decodeURIComponent(_iconPickerTarget.replace('inlineIcon_',''));
+      saveCategoryIcon(cat, emoji).then(() => {
+        loadCategoryManager();
+        showToast('✅ Icon updated for ' + cat);
+      });
+    }
+  }
+  closeIconPicker();
+}
+
+function editCatIcon(cat, btn) {
+  // Create a unique input id for this cat
+  const inputId = 'inlineIcon_' + encodeURIComponent(cat);
+  _iconPickerTarget = inputId;
+  // Store cat name in a temp element then open picker
+  window._iconEditCat = cat;
+  openIconPicker(inputId);
+  // We use a hidden temp input to carry the value
+  let tmp = document.getElementById(inputId);
+  if (!tmp) {
+    tmp = document.createElement('input');
+    tmp.id = inputId;
+    tmp.type = 'hidden';
+    tmp.value = CATEGORY_ICONS[cat] || '📄';
+    document.body.appendChild(tmp);
+  }
+}
+
+async function addMainCat() {
+  const input    = document.getElementById('newMainCatInput');
+  const iconInp  = document.getElementById('newMainCatIcon');
+  const val  = (input.value || '').trim();
+  const icon = (iconInp && iconInp.value.trim()) || '📄';
   if (!val) { showToast('Please enter a category name.'); return; }
   if (editableMainCategories.includes(val)) { showToast('Category already exists.'); return; }
   editableMainCategories.push(val);
   subCatCache[val] = [];
+  // Save icon
+  await saveCategoryIcon(val, icon);
   input.value = '';
+  if (iconInp) iconInp.value = '';
   loadCategoryManager();
-  showToast('✅ "' + val + '" added as main category.');
+  showToast('✅ "' + icon + ' ' + val + '" added as main category.');
 }
 
 function editMainCat(idx) {
@@ -4326,6 +4449,8 @@ async function init() {
       }
     } catch(e) {}
     await loadSubCatCache();
+    await seedJudiciarySubcat(); // ensure Criminal Judiciary is seeded
+    await loadCategoryIcons();    // load custom emoji icons from Firestore
   }
   await loadFavorites();
   document.getElementById('statUsers').textContent = '—';
@@ -5731,5 +5856,27 @@ function confirmLogout() {
   if(dd) dd.classList.remove('open');
 }
 </script>
+
+<!-- ─── EMOJI ICON PICKER MODAL ──────────────────────────────── -->
+<div id="iconPickerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;width:90%;max-width:380px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+    <div style="background:var(--kerala-dark);color:white;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-weight:700;font-size:15px;">🎨 Pick Category Icon</span>
+      <span onclick="closeIconPicker()" style="cursor:pointer;font-size:20px;color:rgba(255,255,255,.7);line-height:1;">&times;</span>
+    </div>
+    <div style="padding:14px 16px;">
+      <input id="iconPickerSearch" type="text" placeholder="Or type any emoji directly…" maxlength="4"
+        style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:16px;margin-bottom:12px;font-family:inherit;text-align:center;letter-spacing:2px;"
+        oninput="renderIconGrid(this.value)"
+        onkeydown="if(event.key==='Enter'&&this.value.trim()){pickIcon(this.value.trim());}">
+      <p style="font-size:11px;color:#aaa;margin-bottom:10px;text-align:center;">Click an emoji below, or type one above and press Enter</p>
+      <div id="iconPickerGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;max-height:260px;overflow-y:auto;padding:4px;"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-outline btn-sm" onclick="closeIconPicker()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
