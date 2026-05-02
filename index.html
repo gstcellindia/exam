@@ -2638,7 +2638,7 @@ const MAIN_CATEGORIES = [
   'PWD', 'Municipality', 'Co-operative', 'Police', 'Employment Exchange'
 ];
 
-const CATEGORY_ICONS = {
+let CATEGORY_ICONS = {
   'Account Test': '📊', 'Revenue': '🏦', 'Forest': '🌳', 'Panchayath': '🏘️',
   'Registration': '📝', 'Prisons': '🔐', 'Judiciary': '⚖️', 'Social Justice': '🤝',
   'KSEB': '⚡', 'Local Fund Audit': '🔍', 'Motor Vehicles': '🚗', 'Labour': '👷',
@@ -4352,6 +4352,29 @@ function showToast(msg) {
 let subCatCache = {};
 let sub2Cache = {};
 
+async function loadCategoryIcons() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('settings').doc('categoryIcons').get();
+    if (snap.exists) Object.assign(CATEGORY_ICONS, snap.data() || {});
+  } catch(e) {}
+}
+
+async function seedJudiciarySubcat() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('subcategories').doc('Judiciary').get();
+    const existing = snap.exists ? (snap.data().list || []) : [];
+    if (!existing.includes('Criminal Judiciary')) {
+      const updated = [...existing, 'Criminal Judiciary'];
+      const sub2 = snap.exists ? (snap.data().sub2 || {}) : {};
+      await db.collection('subcategories').doc('Judiciary').set({ list: updated, sub2 });
+      if (!subCatCache['Judiciary']) subCatCache['Judiciary'] = [];
+      subCatCache['Judiciary'] = updated;
+    }
+  } catch(e) {}
+}
+
 async function loadSubCatCache() {
   if (!db) return;
   try {
@@ -4402,6 +4425,8 @@ async function init() {
       }
     } catch(e) {}
     await loadSubCatCache();
+    await seedJudiciarySubcat();
+    await loadCategoryIcons();
   }
   await loadFavorites();
   renderHomeGrid();
