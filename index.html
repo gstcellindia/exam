@@ -34,6 +34,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@300;400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Raleway:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root {
   --kerala-gold: #C8A96E;
@@ -1403,6 +1405,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
           </div>
           <span id="realtimeToggleLabel">Real-time</span>
         </div>
+        <button class="btn btn-sm" style="background:#E8F5EE;color:var(--kerala-green);border:1.5px solid #81C784;" onclick="downloadExamPDF()" title="Download question paper as PDF"><i class="fas fa-file-pdf"></i> <span id="pdfBtnLabel">PDF</span></button>
         <button class="btn btn-outline btn-sm" onclick="confirmSubmit()"><i class="fas fa-check-circle"></i> Submit</button>
         <div class="exam-timer" id="examTimer">01:30:00</div>
       </div>
@@ -4336,6 +4339,253 @@ async function saveEditedPaper() {
 
 
 // ─── TOAST ────────────────────────────────────
+
+// ─── DOWNLOAD EXAM QUESTIONS AS PDF ─────────────────────────────
+function downloadExamPDF() {
+  if (!currentExam || !currentExam.questions || !currentExam.questions.length) {
+    showToast('No exam loaded.');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) {
+    showToast('PDF library not loaded. Check your connection.');
+    return;
+  }
+
+  // Button feedback
+  const btn = document.getElementById('pdfBtnLabel');
+  const originalLabel = btn ? btn.textContent : 'PDF';
+  if (btn) btn.textContent = 'Generating…';
+
+  // Sort questions by original q_no
+  const sorted = [...currentExam.questions].sort((a, b) => {
+    return (parseInt(a.q_no) || 0) - (parseInt(b.q_no) || 0);
+  });
+
+  const paperTitle  = currentExam.title || 'Question Paper';
+  const month       = currentExam.month  || '';
+  const year        = currentExam.year   || '';
+  const dateStr     = [month, year].filter(Boolean).join(' ');
+  const category    = currentExam.mainCategory || currentExam.category || '';
+
+  // ── Initialise document ──
+  const doc      = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW    = doc.internal.pageSize.getWidth();
+  const pageH    = doc.internal.pageSize.getHeight();
+  const margin   = 14;
+  const contentW = pageW - margin * 2;
+
+  // ── Helper: draw repeating compact header on pages 2+ ──
+  function drawPageHeader(isFirst) {
+    if (isFirst) {
+      // Full header
+      doc.setFillColor(26, 39, 68);
+      doc.rect(0, 0, pageW, 28, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(200, 169, 110);
+      doc.text('EXAM PSC', margin, 11);
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(190, 200, 220);
+      doc.text('Kerala Departmental Exam Portal', margin, 17);
+
+      // Category badge
+      if (category) {
+        doc.setFontSize(7.5);
+        doc.setTextColor(200, 169, 110);
+        doc.text(category.toUpperCase(), margin, 23);
+      }
+
+      // Paper title (right-aligned, wraps)
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      const titleLines = doc.splitTextToSize(paperTitle, contentW * 0.55);
+      doc.text(titleLines, pageW - margin, 10, { align: 'right' });
+
+      if (dateStr) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(180, 180, 180);
+        doc.text(dateStr, pageW - margin, 10 + titleLines.length * 5, { align: 'right' });
+      }
+
+      // Divider line + sub-heading
+      let y = 34;
+      doc.setDrawColor(200, 169, 110);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, pageW - margin, y);
+      y += 6;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(26, 39, 68);
+      doc.text('Question Paper', margin, y);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Total: ${sorted.length} Questions  ·  Duration: ${currentExam.duration || '—'} min`,
+        pageW - margin, y, { align: 'right' }
+      );
+      return y + 8;
+
+    } else {
+      // Compact repeating header
+      doc.setFillColor(26, 39, 68);
+      doc.rect(0, 0, pageW, 10, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(200, 169, 110);
+      doc.text('EXAM PSC', margin, 7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(200, 200, 200);
+      const shortTitle = doc.splitTextToSize(paperTitle, contentW * 0.7);
+      doc.text(shortTitle[0] + (shortTitle.length > 1 ? '\u2026' : ''), pageW - margin, 7, { align: 'right' });
+      return 16;
+    }
+  }
+
+  // ── Draw footer on a given page ──
+  function drawFooter(pageNum, totalPages) {
+    doc.setPage(pageNum);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(160, 160, 160);
+    doc.text(
+      'Page ' + pageNum + ' of ' + totalPages +
+      '  \u2022  Generated by Exam PSC  \u2022  ' +
+      new Date().toLocaleDateString('en-IN'),
+      pageW / 2, pageH - 6, { align: 'center' }
+    );
+  }
+
+  // ── Render all questions ──
+  let y = drawPageHeader(true);
+  let isFirstPage = true;
+
+  sorted.forEach((q, idx) => {
+    const qText  = (q.question_en || q.question || '(No question text)').trim();
+    const qMl    = (q.question_ml || '').trim();
+    const answer = (q.answer || '').toUpperCase();
+    const qNum   = q.q_no || (idx + 1);
+
+    const optLabels = ['A', 'B', 'C', 'D'];
+    const optKeys   = ['option_a', 'option_b', 'option_c', 'option_d'];
+
+    // Pre-measure heights
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    const qLines   = doc.splitTextToSize(qText, contentW - 10);
+    let   qH       = qLines.length * 5;
+
+    // Malayalam text height (approx — font substituted)
+    let mlH = 0;
+    if (qMl) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const mlLines = doc.splitTextToSize(qMl, contentW - 10);
+      mlH = mlLines.length * 4.5 + 2;
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    let totalOptH = 0;
+    const optLineArrays = optKeys.map((k, i) => {
+      const txt   = (q[k] || '').trim();
+      const lines = doc.splitTextToSize('(' + optLabels[i] + ')  ' + txt, contentW - 18);
+      totalOptH  += lines.length * 4.5 + 1.5;
+      return lines;
+    });
+
+    const blockH = 5 + qH + mlH + totalOptH + 10; // top padding + q + ml + opts + bottom gap
+
+    // New page if block won't fit
+    if (y + blockH > pageH - 14) {
+      doc.addPage();
+      isFirstPage = false;
+      y = drawPageHeader(false);
+    }
+
+    // ── Question number chip ──
+    doc.setFillColor(237, 243, 255);
+    doc.roundedRect(margin, y - 4.5, 9, 6.5, 1.2, 1.2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(26, 39, 68);
+    doc.text(String(qNum), margin + 4.5, y, { align: 'center' });
+
+    // ── Question text (EN) ──
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(26, 39, 68);
+    doc.text(qLines, margin + 11, y);
+    y += qH + 2;
+
+    // ── Malayalam text (if present) ──
+    if (qMl) {
+      doc.setFont('helvetica', 'normal');   // jsPDF can't render Malayalam glyphs;
+      doc.setFontSize(9);                   // shows transliterated / fallback chars.
+      doc.setTextColor(90, 90, 90);
+      const mlLines = doc.splitTextToSize(qMl, contentW - 10);
+      doc.text(mlLines, margin + 11, y);
+      y += mlH;
+    }
+
+    y += 1;
+
+    // ── Options ──
+    optKeys.forEach((k, i) => {
+      const isAnswer = answer === optLabels[i];
+      const lines    = optLineArrays[i];
+      const rowH     = lines.length * 4.5 + 1.5;
+
+      if (isAnswer) {
+        // Highlighted answer row
+        doc.setFillColor(232, 245, 238);
+        doc.roundedRect(margin + 10, y - 3.5, contentW - 10, rowH + 0.5, 1, 1, 'F');
+        doc.setDrawColor(30, 122, 78);
+        doc.setLineWidth(0.25);
+        doc.roundedRect(margin + 10, y - 3.5, contentW - 10, rowH + 0.5, 1, 1, 'S');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 122, 78);
+      } else {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(70, 70, 70);
+      }
+      doc.setFontSize(9.5);
+      doc.text(lines, margin + 14, y);
+      y += rowH;
+    });
+
+    // Thin rule between questions
+    y += 3;
+    doc.setDrawColor(218, 224, 240);
+    doc.setLineWidth(0.18);
+    doc.line(margin, y - 1, pageW - margin, y - 1);
+    y += 3;
+  });
+
+  // ── Footers ──
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) drawFooter(p, totalPages);
+
+  // ── Save ──
+  const safeName = paperTitle
+    .replace(/[^\w\s\-]/g, '')
+    .replace(/\s+/g, '_')
+    .slice(0, 60);
+  doc.save((safeName || 'QuestionPaper') + '_Q' + sorted.length + '.pdf');
+
+  if (btn) btn.textContent = originalLabel;
+  showToast('\u2705 PDF downloaded — ' + sorted.length + ' questions.');
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
