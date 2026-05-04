@@ -34,6 +34,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@300;400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Raleway:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root {
   --kerala-gold: #C8A96E;
@@ -1408,10 +1410,23 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
           </p>
         </div>
         <div class="admin-card">
-          <h3><i class="fas fa-file-alt" style="color:var(--kerala-gold);margin-right:6px;"></i> Manage Question Papers</h3>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;"><i class="fas fa-file-alt" style="color:var(--kerala-gold);margin-right:6px;"></i> Manage Question Papers</h3>
+            <button class="btn btn-sm btn-outline" onclick="loadPapers()"><i class="fas fa-sync"></i> Refresh</button>
+          </div>
+          <div class="table-search-bar">
+            <div class="table-search-wrap">
+              <i class="fas fa-search"></i>
+              <input class="table-search-input" id="papersSearch" placeholder="Search by title, category, month or year…" oninput="filterPapersTable()">
+            </div>
+          </div>
           <div class="table-wrap">
             <table><thead><tr><th>Title</th><th>Category</th><th>Month – Year</th><th>Questions</th><th>Price</th><th>Added</th><th>Actions</th></tr></thead>
             <tbody id="papersTable"></tbody></table>
+          </div>
+          <div class="pagination-wrap" id="papersPagination" style="display:none;">
+            <span class="pagination-info" id="papersInfo"></span>
+            <div class="pagination-btns" id="papersBtns"></div>
           </div>
         </div>
       </div>
@@ -1965,6 +1980,10 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
               <tbody id="qpbBuiltTable"><tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr></tbody>
             </table>
           </div>
+          <div class="pagination-wrap" id="qpbBuiltPagination" style="display:none;">
+            <span class="pagination-info" id="qpbBuiltInfo"></span>
+            <div class="pagination-btns" id="qpbBuiltBtns"></div>
+          </div>
         </div>
 
       </div><!-- end panel-qpbuilder -->
@@ -2117,6 +2136,7 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
       <i class="fas fa-edit" style="color:var(--kerala-gold);font-size:18px;"></i>
       <span style="color:white;font-size:17px;font-weight:700;flex:1;">Edit Question Paper</span>
       <button id="saveEditBtn" class="btn btn-gold btn-sm" onclick="saveEditedPaper()"><i class="fas fa-save"></i> Save All Changes</button>
+      <button class="btn btn-sm" style="background:#E8F5EE;color:var(--kerala-green);border:1.5px solid #81C784;" onclick="downloadPaperPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
       <button onclick="document.getElementById('editModal').style.display='none'" style="background:rgba(255,255,255,.15);border:none;color:white;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;margin-left:8px;">✕</button>
     </div>
     <!-- Paper metadata fields -->
@@ -2204,9 +2224,12 @@ select:focus { outline: none; border-color: var(--kerala-dark); }
         <tbody id="editQList"></tbody>
       </table>
     </div>
-    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;">
-      <button class="btn btn-outline" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
-      <button class="btn btn-gold" onclick="saveEditedPaper()"><i class="fas fa-save"></i> Save All Changes</button>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-sm" style="background:#E8F5EE;color:var(--kerala-green);border:1.5px solid #81C784;" onclick="downloadPaperPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
+        <button class="btn btn-gold" onclick="saveEditedPaper()"><i class="fas fa-save"></i> Save All Changes</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2655,7 +2678,7 @@ function renderRecentUsersTable() {
 
 // ─── PAGINATION HELPER ──────────────────────────
 function renderPagination(key, total, currentPage, totalPages) {
-  const perPage = key === 'users' ? USERS_PER_PAGE : key === 'recentUsers' ? RECENT_PER_PAGE : PAYMENTS_PER_PAGE;
+  const perPage = key === 'users' ? USERS_PER_PAGE : key === 'recentUsers' ? RECENT_PER_PAGE : key === 'papers' ? PAPERS_PAGE_SIZE : key === 'qpbBuilt' ? QPB_BUILT_PAGE_SIZE : PAYMENTS_PER_PAGE;
   const start = (currentPage - 1) * perPage + 1;
   const end = Math.min(currentPage * perPage, total);
   const paginationEl = document.getElementById(key + 'Pagination');
@@ -2679,6 +2702,8 @@ function goPage(key, page) {
   if (key === 'users') { usersCurrentPage = page; renderUsersTable(); }
   else if (key === 'recentUsers') { recentUsersPage = page; renderRecentUsersTable(); }
   else if (key === 'payments') { paymentsCurrentPage = page; renderPaymentsTable(); }
+  else if (key === 'papers') { papersCurrentPage = page; renderPapersTable(); }
+  else if (key === 'qpbBuilt') { qpbBuiltCurrentPage = page; renderQpbBuiltTable(); }
 }
 
 // ─── ADMIN: PAYMENTS ──────────────────────────
@@ -2916,9 +2941,46 @@ async function loadResults() {
   }).join('') || '<tr><td colspan=6 style="color:#aaa">No results yet</td></tr>';
 }
 
+// ─── MANAGE QUESTION PAPERS – search + pagination ───────────────
+const PAPERS_PAGE_SIZE = 12;
+let allPapersData = [];
+let papersFiltered = [];
+let papersCurrentPage = 1;
+
 async function loadPapers() {
-  const papers = examPapers.length ? examPapers : demoExams;
-  document.getElementById('papersTable').innerHTML = papers.map(p => {
+  allPapersData = examPapers.length ? examPapers : demoExams;
+  const searchEl = document.getElementById('papersSearch');
+  if (searchEl) searchEl.value = '';
+  papersFiltered = [...allPapersData];
+  papersCurrentPage = 1;
+  renderPapersTable();
+}
+
+function filterPapersTable() {
+  const q = (document.getElementById('papersSearch')?.value || '').toLowerCase().trim();
+  papersFiltered = q
+    ? allPapersData.filter(p =>
+        (p.title||'').toLowerCase().includes(q) ||
+        (p.category||'').toLowerCase().includes(q) ||
+        (p.mainCategory||'').toLowerCase().includes(q) ||
+        (p.month||'').toLowerCase().includes(q) ||
+        String(p.year||'').includes(q)
+      )
+    : [...allPapersData];
+  papersCurrentPage = 1;
+  renderPapersTable();
+}
+
+function renderPapersTable() {
+  const total = papersFiltered.length;
+  const totalPages = Math.ceil(total / PAPERS_PAGE_SIZE) || 1;
+  if (papersCurrentPage > totalPages) papersCurrentPage = totalPages;
+  const start = (papersCurrentPage - 1) * PAPERS_PAGE_SIZE;
+  const slice = papersFiltered.slice(start, start + PAPERS_PAGE_SIZE);
+
+  const tbody = document.getElementById('papersTable');
+  if (!tbody) return;
+  tbody.innerHTML = slice.length ? slice.map(p => {
     const lockBadge = p.isLocked && p.price > 0
       ? `<span class="badge badge-lock"><i class="fas fa-lock" style="font-size:9px"></i> ₹${p.price}</span>`
       : `<span class="badge badge-free"><i class="fas fa-unlock" style="font-size:9px"></i> Free</span>`;
@@ -2934,7 +2996,9 @@ async function loadPapers() {
         <button class="btn btn-sm btn-danger" onclick="deleteExam('${p.id}')"><i class="fas fa-trash"></i></button>
       </td>
     </tr>`;
-  }).join('');
+  }).join('') : '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No papers found.</td></tr>';
+
+  renderPagination('papers', total, papersCurrentPage, totalPages);
 }
 
 // ─── EDIT PAPER ─────────────────────────────────
@@ -3126,6 +3190,198 @@ async function saveEditedPaper() {
     loadPapers();
   } catch(e) { showToast('Save failed: ' + e.message); }
   btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save All Changes';
+}
+
+
+// ─── DOWNLOAD PAPER AS PDF ───────────────────────────────────────
+function downloadPaperPDF() {
+  if (!editingQuestions || !editingQuestions.length) {
+    showToast('No questions loaded. Open a paper first.');
+    return;
+  }
+
+  // Get paper title from modal fields
+  const mainCat  = document.getElementById('editMainCat')?.value  || '';
+  const subCat   = document.getElementById('editSubCat')?.value   || '';
+  const month    = document.getElementById('editMonth')?.value    || '';
+  const year     = document.getElementById('editYear')?.value     || '';
+  const paperTitle = [mainCat, subCat].filter(Boolean).join(' – ') ||
+                     (editingPaperId ? 'Question Paper' : 'Question Paper');
+  const dateStr  = [month, year].filter(Boolean).join(' ');
+
+  // Sort questions by original q_no
+  const sorted = [...editingQuestions].sort((a, b) => {
+    const na = parseInt(a.q_no) || 0;
+    const nb = parseInt(b.q_no) || 0;
+    return na - nb;
+  });
+
+  // ── Build PDF using jsPDF ──
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { showToast('PDF library not loaded. Check internet connection.'); return; }
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW  = doc.internal.pageSize.getWidth();
+  const pageH  = doc.internal.pageSize.getHeight();
+  const margin = 14;
+  const contentW = pageW - margin * 2;
+
+  // ── Header on page 1 ──
+  // Background banner
+  doc.setFillColor(26, 39, 68);               // --kerala-dark
+  doc.rect(0, 0, pageW, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(200, 169, 110);            // --kerala-gold
+  doc.text('EXAM PSC', margin, 11);
+
+  doc.setFontSize(9);
+  doc.setTextColor(200, 200, 200);
+  doc.text('Kerala Departmental Exam Portal', margin, 17);
+
+  // Paper title (right side / wrapped)
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  const titleLines = doc.splitTextToSize(paperTitle, contentW * 0.55);
+  doc.text(titleLines, pageW - margin, 11, { align: 'right' });
+  if (dateStr) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(180, 180, 180);
+    doc.text(dateStr, pageW - margin, 11 + titleLines.length * 5, { align: 'right' });
+  }
+
+  // ── Sub-header line ──
+  let y = 34;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(26, 39, 68);
+  doc.text('Question Paper', margin, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Total Questions: ${sorted.length}`, pageW - margin, y, { align: 'right' });
+  y += 4;
+  doc.setDrawColor(200, 169, 110);
+  doc.setLineWidth(0.6);
+  doc.line(margin, y, pageW - margin, y);
+  y += 7;
+
+  // ── Questions ──
+  const optLabels = ['A', 'B', 'C', 'D'];
+  const optKeys   = ['option_a', 'option_b', 'option_c', 'option_d'];
+
+  sorted.forEach((q, idx) => {
+    const qText    = (q.question_en || q.question || '(No question text)').trim();
+    const answer   = (q.answer || '').toUpperCase();
+    const qNum     = q.q_no || (idx + 1);
+
+    // Measure question block height before drawing (to decide if we need a new page)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    const qLabel   = `Q${qNum}.`;
+    const qBodyW   = contentW - 10;
+    const qLines   = doc.splitTextToSize(qText, qBodyW);
+    const qH       = qLines.length * 5;
+
+    // Options heights
+    let optHeights = [];
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    optKeys.forEach((k, i) => {
+      const optText = ((q[k] || '').trim());
+      const lines   = doc.splitTextToSize(`(${optLabels[i]})  ${optText}`, qBodyW - 6);
+      optHeights.push(lines.length * 4.5);
+    });
+    const totalOptH = optHeights.reduce((s, h) => s + h, 0) + 4;
+    const blockH    = qH + totalOptH + 10; // 10mm padding between questions
+
+    // New page if needed
+    if (y + blockH > pageH - 14) {
+      doc.addPage();
+      y = 16;
+      // Compact page header
+      doc.setFillColor(26, 39, 68);
+      doc.rect(0, 0, pageW, 10, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(200, 169, 110);
+      doc.text('EXAM PSC', margin, 7);
+      doc.setTextColor(200, 200, 200);
+      doc.setFont('helvetica', 'normal');
+      const shortTitle = doc.splitTextToSize(paperTitle, contentW * 0.7);
+      doc.text(shortTitle[0] + (shortTitle.length > 1 ? '…' : ''), pageW - margin, 7, { align: 'right' });
+      y = 16;
+    }
+
+    // Question number pill background
+    doc.setFillColor(237, 243, 255);
+    doc.roundedRect(margin, y - 4, 8, 6, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(26, 39, 68);
+    doc.text(String(qNum), margin + 4, y, { align: 'center' });
+
+    // Question text
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(26, 39, 68);
+    doc.text(qLines, margin + 10, y);
+    y += qH + 3;
+
+    // Options
+    optKeys.forEach((k, i) => {
+      const optText  = (q[k] || '').trim();
+      const isAnswer = answer === optLabels[i];
+      const fullOpt  = `(${optLabels[i]})  ${optText}`;
+      const lines    = doc.splitTextToSize(fullOpt, qBodyW - 6);
+
+      if (isAnswer) {
+        // Highlight correct answer
+        doc.setFillColor(232, 245, 238);
+        const boxH = lines.length * 4.5 + 1;
+        doc.roundedRect(margin + 10, y - 3.5, contentW - 10, boxH, 1, 1, 'F');
+        doc.setDrawColor(30, 122, 78);
+        doc.setLineWidth(0.3);
+        doc.roundedRect(margin + 10, y - 3.5, contentW - 10, boxH, 1, 1, 'S');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 122, 78);
+      } else {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(80, 80, 80);
+      }
+      doc.setFontSize(9.5);
+      doc.text(lines, margin + 13, y);
+      y += lines.length * 4.5 + 1.5;
+    });
+
+    // Thin separator between questions
+    y += 3;
+    doc.setDrawColor(220, 225, 240);
+    doc.setLineWidth(0.2);
+    doc.line(margin, y - 1, pageW - margin, y - 1);
+    y += 3;
+  });
+
+  // ── Footer on every page ──
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(160, 160, 160);
+    doc.text(
+      `Page ${p} of ${totalPages}  |  Generated by Exam PSC Admin  |  ${new Date().toLocaleDateString('en-IN')}`,
+      pageW / 2, pageH - 6, { align: 'center' }
+    );
+  }
+
+  // ── Save ──
+  const safeName = paperTitle.replace(/[^a-zA-Z0-9\s\-]/g, '').replace(/\s+/g, '_').slice(0, 60);
+  doc.save(`${safeName || 'QuestionPaper'}_Q${sorted.length}.pdf`);
+  showToast('\u2705 PDF downloaded successfully!');
 }
 
 // CSV Upload – dual language
@@ -3330,12 +3586,41 @@ async function uploadCSVToFirebase() {
     btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload to Database';
     showUploadStatus('success', `<i class="fas fa-check-circle"></i> ${parsedCSV.length} questions uploaded successfully! Paper: <strong>${autoTitle}</strong>`);
 
+    // ── Clear CSV preview & parsed data ──
     document.getElementById('csvPreview').style.display = 'none';
     parsedCSV = []; parsedCSV_EN = []; parsedCSV_ML = [];
     document.getElementById('enFileLabel').textContent = '';
     document.getElementById('mlFileLabel').textContent = '';
     document.getElementById('dropZoneEN').style.borderColor = '';
     document.getElementById('dropZoneML').style.borderColor = '';
+    // Reset file inputs so the same file can be re-uploaded if needed
+    const enInput = document.getElementById('csvFileEN');
+    const mlInput = document.getElementById('csvFileML');
+    if (enInput) enInput.value = '';
+    if (mlInput) mlInput.value = '';
+
+    // ── Clear form fields ──
+    const uploadMainCatEl = document.getElementById('uploadMainCat');
+    if (uploadMainCatEl) { uploadMainCatEl.selectedIndex = 0; uploadMainCatEl.style.borderColor = ''; }
+    const uploadSubCatEl = document.getElementById('uploadSubCat');
+    if (uploadSubCatEl) { uploadSubCatEl.innerHTML = '<option value="">— Select Main Category first —</option>'; uploadSubCatEl.disabled = true; uploadSubCatEl.style.borderColor = ''; }
+    const uploadSub2El = document.getElementById('uploadSub2');
+    if (uploadSub2El) { uploadSub2El.innerHTML = '<option value="">— Select Sub-category first —</option>'; uploadSub2El.disabled = true; }
+    const uploadMonthEl = document.getElementById('uploadMonth');
+    if (uploadMonthEl) uploadMonthEl.selectedIndex = 0;
+    const uploadYearEl = document.getElementById('uploadYear');
+    if (uploadYearEl) uploadYearEl.value = '';
+    const uploadDurationEl = document.getElementById('uploadDuration');
+    if (uploadDurationEl) uploadDurationEl.value = '90';
+    const uploadPriceEl = document.getElementById('uploadPrice');
+    if (uploadPriceEl) uploadPriceEl.value = '0';
+    const uploadFreeCountEl = document.getElementById('uploadFreeCount');
+    if (uploadFreeCountEl) uploadFreeCountEl.value = '0';
+    const uploadSubCatHint = document.getElementById('uploadSubCatHint');
+    if (uploadSubCatHint) uploadSubCatHint.style.display = 'none';
+
+    // ── Refresh the Manage Question Papers table ──
+    await loadPapers();
   } catch(e) {
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload to Database';
@@ -5349,10 +5634,12 @@ async function qpbLoadBank() {
     const papersSnap = await db.collection('papers')
       .where('mainCategory', '==', mainCat)
       .get();
-    // Client-side sub-category filter (avoids composite index on mainCategory+subCategory)
-    const matchingDocs = subCat
-      ? papersSnap.docs.filter(d => (d.data().subCategory || d.data().category || '') === subCat)
-      : papersSnap.docs;
+    // Client-side filters:
+    // 1. Exclude built papers (they are assembled papers, not source question banks)
+    // 2. Optionally filter by sub-category (avoids composite Firestore index)
+    const matchingDocs = papersSnap.docs
+      .filter(d => !d.data().builtPaper)
+      .filter(d => !subCat || (d.data().subCategory || d.data().category || '') === subCat);
 
     let paperCount = 0;
     const fetchPromises = matchingDocs.map(async paperDoc => {
@@ -5701,56 +5988,76 @@ async function qpbPublish(destination) {
   }
 }
 
+// ─── BUILT PAPERS – pagination ──────────────────
+const QPB_BUILT_PAGE_SIZE = 12;
+let allQpbBuiltData = [];
+let qpbBuiltCurrentPage = 1;
+
 async function qpbLoadBuiltPapers() {
   const tbody = document.getElementById('qpbBuiltTable');
   if (!tbody || !db) return;
   tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:16px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
   try {
-    // Fetch without orderBy to avoid requiring a composite Firestore index.
-    // Sort client-side instead.
     const snap = await db.collection('papers')
       .where('builtPaper', '==', true)
-      .limit(50)
+      .limit(200)
       .get();
 
     if (snap.empty) {
       tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:16px;">No built papers yet.</td></tr>';
+      const pg = document.getElementById('qpbBuiltPagination');
+      if (pg) pg.style.display = 'none';
       return;
     }
 
     // Sort newest-first in JS
-    const sortedDocs = snap.docs.slice().sort((a, b) => {
+    allQpbBuiltData = snap.docs.slice().sort((a, b) => {
       const ta = a.data().createdAt?.toMillis ? a.data().createdAt.toMillis() : 0;
       const tb = b.data().createdAt?.toMillis ? b.data().createdAt.toMillis() : 0;
       return tb - ta;
     });
 
-    tbody.innerHTML = sortedDocs.map(doc => {
-      const p = doc.data();
-      const created = p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString('en-IN') : '—';
-      const dest = p.showOnHome ? '<span class="badge badge-green"><i class="fas fa-globe"></i> Home</span>'
-                                : '<span class="badge badge-blue"><i class="fas fa-users-cog"></i> Mass Exam</span>';
-      return `<tr>
-        <td style="font-weight:700;font-size:13px;">${escapeHtml(p.title||'—')}</td>
-        <td style="font-size:12px;">${escapeHtml(p.mainCategory||'')}${p.subCategory?' › '+escapeHtml(p.subCategory):''}</td>
-        <td style="text-align:center;font-weight:700;">${p.qCount||0}</td>
-        <td style="text-align:center;">${p.duration||0} min</td>
-        <td style="text-align:center;">₹${p.price||0}</td>
-        <td>${dest}</td>
-        <td style="font-size:12px;color:#888;">${created}</td>
-        <td>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-sm" style="background:#EEF3FF;color:var(--kerala-dark);border:1.5px solid var(--border);" onclick="qpbToggleHome('${doc.id}', ${!p.showOnHome})" title="${p.showOnHome ? 'Remove from home' : 'Publish to home'}">
-              <i class="fas fa-${p.showOnHome ? 'eye-slash' : 'eye'}"></i> ${p.showOnHome ? 'Hide from Home' : 'Show on Home'}
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="qpbDeleteBuilt('${doc.id}')"><i class="fas fa-trash"></i></button>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
+    qpbBuiltCurrentPage = 1;
+    renderQpbBuiltTable();
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--kerala-red);padding:16px;">Error: ${e.message}</td></tr>`;
   }
+}
+
+function renderQpbBuiltTable() {
+  const tbody = document.getElementById('qpbBuiltTable');
+  if (!tbody) return;
+  const total = allQpbBuiltData.length;
+  const totalPages = Math.ceil(total / QPB_BUILT_PAGE_SIZE) || 1;
+  if (qpbBuiltCurrentPage > totalPages) qpbBuiltCurrentPage = totalPages;
+  const start = (qpbBuiltCurrentPage - 1) * QPB_BUILT_PAGE_SIZE;
+  const slice = allQpbBuiltData.slice(start, start + QPB_BUILT_PAGE_SIZE);
+
+  tbody.innerHTML = slice.map(doc => {
+    const p = doc.data();
+    const created = p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString('en-IN') : '—';
+    const dest = p.showOnHome ? '<span class="badge badge-green"><i class="fas fa-globe"></i> Home</span>'
+                              : '<span class="badge badge-blue"><i class="fas fa-users-cog"></i> Mass Exam</span>';
+    return `<tr>
+      <td style="font-weight:700;font-size:13px;">${escapeHtml(p.title||'—')}</td>
+      <td style="font-size:12px;">${escapeHtml(p.mainCategory||'')}${p.subCategory?' › '+escapeHtml(p.subCategory):''}</td>
+      <td style="text-align:center;font-weight:700;">${p.qCount||0}</td>
+      <td style="text-align:center;">${p.duration||0} min</td>
+      <td style="text-align:center;">₹${p.price||0}</td>
+      <td>${dest}</td>
+      <td style="font-size:12px;color:#888;">${created}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-sm" style="background:#EEF3FF;color:var(--kerala-dark);border:1.5px solid var(--border);" onclick="qpbToggleHome('${doc.id}', ${!p.showOnHome})" title="${p.showOnHome ? 'Remove from home' : 'Publish to home'}">
+            <i class="fas fa-${p.showOnHome ? 'eye-slash' : 'eye'}"></i> ${p.showOnHome ? 'Hide from Home' : 'Show on Home'}
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="qpbDeleteBuilt('${doc.id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination('qpbBuilt', total, qpbBuiltCurrentPage, totalPages);
 }
 
 async function qpbToggleHome(docId, showOnHome) {
@@ -5767,6 +6074,14 @@ async function qpbToggleHome(docId, showOnHome) {
           .filter(p => !(p.builtPaper === true && p.showOnHome !== true));
       }
     } catch(e2) {}
+    // Update local built papers cache and re-render without full reload
+    const docIdx = allQpbBuiltData.findIndex(d => d.id === docId);
+    if (docIdx >= 0) {
+      // Patch the cached doc's data
+      const cached = allQpbBuiltData[docIdx];
+      allQpbBuiltData[docIdx] = { id: cached.id, data: () => ({ ...cached.data(), showOnHome }), ...cached };
+      // Re-fetch that single doc to keep it consistent
+    }
     qpbLoadBuiltPapers();
   } catch(e) { showToast('Error: ' + e.message); }
 }
@@ -5781,7 +6096,9 @@ async function qpbDeleteBuilt(docId) {
     batch.delete(db.collection('papers').doc(docId));
     await batch.commit();
     showToast('Paper deleted.');
-    qpbLoadBuiltPapers();
+    // Remove from local cache and re-render
+    allQpbBuiltData = allQpbBuiltData.filter(d => d.id !== docId);
+    renderQpbBuiltTable();
   } catch(e) { showToast('Error: ' + e.message); }
 }
 
